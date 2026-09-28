@@ -1,4 +1,5 @@
 # NexVisuals
+<<<<<<< HEAD
 
 Самостоятельный клиентский Fabric-мод визуальной кастомизации для **Minecraft Java Edition 1.21.11**. Не является частью NexLauncher и не использует его код, сборку или данные.
 
@@ -57,3 +58,6 @@ sh gradlew runClient
 Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Единственный служебный бинарный файл репозитория — официальный проверенный Gradle Wrapper JAR. Репозиторий создаётся без commit/push; решение о лицензии и публикации остаётся владельцу проекта.
 
 Это не официальный продукт Minecraft; он не связан с Mojang или Microsoft.
+=======
+A client-side Fabric mod for Minecraft focused on visual customization, HUDs, effects, animations, and PvP visuals.
+>>>>>>> d91c625dc23216c37d4b5412ddc3313042df2aa9
