@@ -1,0 +1,21 @@
+# Build, local tool state, and Minecraft development data
+.gradle/
+.gradle-user-home/
+build/
+run/
+run-*/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+out/
+logs/
+crash-reports/
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
+.tools/
+

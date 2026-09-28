@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "nexvisuals",
+  "version": "${version}",
+  "name": "NexVisuals",
+  "description": "Modular client-side visual customization for Minecraft.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.nexvisuals.client.NexVisualsClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": ">=0.141.6+1.21.11"
+  }
+}
+
