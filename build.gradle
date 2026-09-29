@@ -28,11 +28,11 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+def resourceProperties = [version: project.version.toString(), minecraft_version: project.minecraft_version]
 processResources {
-    inputs.property 'version', project.version
-    inputs.property 'minecraft_version', project.minecraft_version
+    inputs.properties resourceProperties
     filesMatching('fabric.mod.json') {
-        expand version: project.version, minecraft_version: project.minecraft_version
+        expand resourceProperties
     }
 }
 
@@ -50,3 +50,46 @@ tasks.withType(AbstractArchiveTask).configureEach {
 }
 test { useJUnitPlatform() }
 
+// Headless integration tests for actual module definitions and pinned mixin targets, without launching Minecraft.
+sourceSets {
+    clientTest {
+        compileClasspath += sourceSets.client.output + sourceSets.client.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+configurations {
+    clientTestImplementation.extendsFrom testImplementation
+    clientTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+tasks.register('clientTest', Test) {
+    description = 'Tests client module metadata and bytecode contracts without opening a game window.'
+    testClassesDirs = sourceSets.clientTest.output.classesDirs
+    classpath = sourceSets.clientTest.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'java.awt.headless', 'true'
+}
+check.dependsOn tasks.named('clientTest')
+
+def productionJar = tasks.named('remapJar').flatMap { it.archiveFile }
+tasks.register('verifyModJar') {
+    dependsOn tasks.named('remapJar')
+    inputs.file(productionJar)
+    doLast {
+        def file = productionJar.get().asFile
+        new java.util.zip.ZipFile(file).withCloseable { zip ->
+            def json = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            assert json.id == 'nexvisuals' && json.environment == 'client'
+            assert json.depends.minecraft == '=1.21.11' : 'Target must remain exactly Minecraft 1.21.11'
+            assert !json.entrypoints.containsKey('main') && !json.entrypoints.containsKey('server')
+            def mixins = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('nexvisuals.client.mixins.json')))
+            mixins.client.each { name -> assert zip.getEntry(mixins.package.replace('.', '/') + '/' + name + '.class') != null }
+            ['orb', 'spark', 'ring', 'slash', 'star'].each { shape ->
+                assert zip.getEntry('assets/nexvisuals/textures/particle/' + shape + '.png') != null
+            }
+            ['clean', 'aurora', 'cinematic'].each { preset -> assert zip.getEntry('nexvisuals/presets/' + preset + '.json') != null }
+            assert !zip.entries().toList().any { it.name.contains('Test.class') || it.name.startsWith('net/minecraft/') }
+        }
+        logger.lifecycle('Verified production mod: {} ({} bytes), Minecraft 1.21.11', file.absolutePath, file.length())
+    }
+}
+build.dependsOn tasks.named('verifyModJar')

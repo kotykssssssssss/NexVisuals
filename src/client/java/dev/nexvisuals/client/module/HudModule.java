@@ -8,6 +8,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 /** Optional client-side behavior for a VisualModule that draws a HUD element. */
 public interface HudModule {
+    /** A related layer may inherit an enabled group's transform even without its own customization. */
+    default boolean isHudActive(boolean enabled) { return enabled; }
+
     /** Null adds a new overlay before chat; an identifier wraps that existing HUD layer. */
     default Identifier replacementLayer() {
         return null;

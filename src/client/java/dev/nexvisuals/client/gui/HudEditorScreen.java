@@ -26,6 +26,7 @@ public final class HudEditorScreen extends Screen {
     private double grabX;
     private double grabY;
     private boolean grid = true;
+    private boolean showControls = true;
 
     public HudEditorScreen(Screen parent, ModuleRegistry registry, GlobalSettings globals, Runnable save) {
         super(Component.literal("NexVisuals HUD editor"));
@@ -36,8 +37,8 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override protected void init() {
-        addRenderableWidget(new NexButton(width - 72, 8, 64, 20, () -> "Done", () -> false, this::onClose, globals));
-        NexButton gridButton = new NexButton(width - 142, 8, 64, 20, () -> grid ? "Grid: ON" : "Grid: OFF",
+        addRenderableWidget(new NexButton(width - 72, height - 28, 64, 20, () -> "Done", () -> false, this::onClose, globals));
+        NexButton gridButton = new NexButton(width - 142, height - 28, 64, 20, () -> grid ? "Grid: ON" : "Grid: OFF",
                 () -> grid, () -> grid = !grid, globals);
         gridButton.setTooltip(Tooltip.create(Component.literal("Toggle alignment guides. Hold Shift while dragging to snap to 8 GUI pixels.")));
         addRenderableWidget(gridButton);
@@ -54,6 +55,7 @@ public final class HudEditorScreen extends Screen {
         }, globals);
         settings.setTooltip(Tooltip.create(Component.literal("Open the selected module's appearance, scale and anchor settings")));
         addRenderableWidget(settings);
+        for (var child : children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) widget.visible = showControls;
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
@@ -79,18 +81,17 @@ public final class HudEditorScreen extends Screen {
                 Draw.text(graphics, font, label, labelX, labelY, 0xFFE5EDFF, true);
             }
         }
-        Draw.roundedRect(graphics, 4, 4, width - 8, 30, 5, 0xEC101725);
-        Draw.text(graphics, font, "HUD EDITOR", 12, 10, globals.accentColor.get(), false);
-        Draw.text(graphics, font, font.plainSubstrByWidth("Drag to move / right-click to toggle", Math.max(30, width - 165)), 12, 22, 0xFF8796B2, false);
-        Draw.roundedRect(graphics, 4, height - 33, width - 8, 29, 5, 0xEC101725);
-        if (width > 430) Draw.text(graphics, font, "Arrows: 1 px / Shift: 8 px / saved on close", 178, height - 21, 0xFF8796B2, false);
+        if (showControls) {
+            Draw.roundedRect(graphics, 4, height - 53, width - 8, 49, 5, 0xEC101725);
+            Draw.text(graphics, font, font.plainSubstrByWidth("HUD EDITOR / Drag / Right-click: toggle / H: hide toolbar", width - 24), 12, height - 46, globals.accentColor.get(), false);
+        }
         if (widgets.isEmpty()) graphics.drawCenteredString(font, "No movable HUD modules are registered.", width / 2, height / 2, 0xFFB7C4DC);
         super.render(graphics, mouseX, mouseY, delta);
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (super.mouseClicked(event, doubleClick)) return true;
-        if (event.y() < 35 || event.y() >= height - 34) return false;
+        if (showControls && event.y() >= height - 54) return false;
         for (int i = widgets.size() - 1; i >= 0; i--) {
             VisualModule module = widgets.get(i);
             EditableHud hud = (EditableHud) module;
@@ -127,6 +128,12 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_H) {
+            showControls = !showControls;
+            for (var child : children()) if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget) widget.visible = showControls;
+            clearFocus();
+            return true;
+        }
         if (selected != null && getFocused() == null) {
             int step = (event.modifiers() & GLFW.GLFW_MOD_SHIFT) != 0 ? 8 : 1;
             int dx = event.key() == GLFW.GLFW_KEY_LEFT ? -step : event.key() == GLFW.GLFW_KEY_RIGHT ? step : 0;
@@ -142,6 +149,7 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) { }
     @Override public void removed() { save.run(); }
     @Override public boolean isPauseScreen() { return false; }
 }

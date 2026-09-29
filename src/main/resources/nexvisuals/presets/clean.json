@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "global": {"accent_color": "#FF72DFFF", "animation_duration": 120, "panel_opacity": 0.92},
+  "modules": {
+    "custom_crosshair": {"enabled": true, "settings": {"shape": "DOT", "dot_size": 2, "color": "#FF72DFFF"}},
+    "hud_fps": {"enabled": true, "settings": {"background": true}},
+    "viewmodel": {"enabled": true, "settings": {"main_scale": 0.78, "main_y": -0.12, "main_roll": -8}},
+    "shield": {"enabled": true, "settings": {"idle_scale": 0.72, "idle_y": -0.14, "block_scale": 0.8, "block_y": -0.15}},
+    "container_visuals": {"enabled": true, "settings": {"opening": "FADE", "motion": "SMOOTH", "duration": 140}},
+    "vanilla_hotbar": {"enabled": true, "settings": {"selected_outline": true, "accent": "#AA72DFFF"}}
+  }
+}

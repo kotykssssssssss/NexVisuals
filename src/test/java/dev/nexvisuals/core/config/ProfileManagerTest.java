@@ -71,12 +71,27 @@ class ProfileManagerTest {
 
     @Test void traversalAbsolutePathsAndDeviceNamesAreRejectedBeforeWriting() {
         ProfileManager profiles = new ProfileManager(directory, new ModuleRegistry(), new GlobalSettings());
-        for (String name : new String[]{"../outside", "..", "a/b", "a\\b", "C:\\bad", "/bad", "", "nul", "con", "com1", "lpt9", "with space", "UPPER"}) {
+        for (String name : new String[]{"../outside", "..", "a/b", "a\\b", "C:\\bad", "/bad", "", "nul", "CON", "com1", "lpt9", " trailing ", "a."}) {
             assertFalse(ProfileManager.validName(name), name);
             assertThrows(IllegalArgumentException.class, () -> profiles.save(name), name);
             assertThrows(IllegalArgumentException.class, () -> profiles.delete(name), name);
         }
         assertTrue(ProfileManager.validName("visuals-01"));
         assertFalse(ProfileManager.validName("x".repeat(49)));
+        assertTrue(ProfileManager.validName("My PvP"));
+        assertTrue(ProfileManager.validName("Мой стиль"));
+    }
+
+    @Test void renamePreservesSnapshotAndCannotOverwriteAnotherProfile() throws Exception {
+        ModuleRegistry registry = new ModuleRegistry();
+        TestModule module = registry.register(new TestModule("test"));
+        ProfileManager profiles = new ProfileManager(directory, registry, new GlobalSettings());
+        module.count.set(8); profiles.save("My PvP");
+        profiles.rename("My PvP", "Cinematic");
+        assertEquals(java.util.List.of("Cinematic"), profiles.list());
+        module.count.set(2); profiles.save("Clean");
+        assertThrows(IOException.class, () -> profiles.rename("Cinematic", "Clean"));
+        profiles.load("Cinematic"); assertEquals(8, module.count.get());
+        profiles.load("Clean"); assertEquals(2, module.count.get());
     }
 }

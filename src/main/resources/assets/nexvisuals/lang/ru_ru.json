@@ -1,4 +1,9 @@
 {
   "key.category.nexvisuals.controls": "NexVisuals",
-  "key.nexvisuals.open_settings": "Открыть NexVisuals"
+  "key.nexvisuals.open_settings": "Открыть NexVisuals",
+  "nexvisuals.menu.enable": "Меню NexVisuals",
+  "nexvisuals.menu.appearance": "Стиль меню...",
+  "nexvisuals.menu.vanilla": "Vanilla",
+  "nexvisuals.menu.subtitle": "NEXVISUALS / КЛАССИКА",
+  "nexvisuals.menu.loading_tip": "Новое приключение обретает форму..."
 }

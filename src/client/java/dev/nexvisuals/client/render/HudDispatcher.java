@@ -31,13 +31,13 @@ public final class HudDispatcher {
             if (replacement == null) {
                 HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT,
                         Identifier.fromNamespaceAndPath("nexvisuals", module.id()), (graphics, deltaTracker) -> {
-                            if (module.enabled()) {
+                            if (hud.isHudActive(module.enabled())) {
                                 hud.renderHud(Minecraft.getInstance(), graphics, deltaTracker);
                             }
                         });
             } else {
                 HudElementRegistry.replaceElement(replacement, original -> (graphics, deltaTracker) -> {
-                    if (module.enabled()) {
+                    if (hud.isHudActive(module.enabled())) {
                         hud.renderWrapped(Minecraft.getInstance(), graphics, deltaTracker, original);
                     } else {
                         original.render(graphics, deltaTracker);

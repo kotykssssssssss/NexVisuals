@@ -4,6 +4,7 @@ import dev.nexvisuals.client.render.Draw;
 import dev.nexvisuals.core.config.ConfigManager;
 import dev.nexvisuals.core.config.GlobalSettings;
 import dev.nexvisuals.core.config.ProfileManager;
+import dev.nexvisuals.core.config.BuiltinProfile;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -32,6 +33,7 @@ final class ProfilesScreen extends Screen {
     private EditBox name;
     private boolean rebuild;
     private boolean confirmDelete;
+    private int builtinIndex;
 
     ProfilesScreen(Screen parent, ProfileManager profiles, GlobalSettings globals, Runnable applied) {
         super(Component.literal("NexVisuals profiles"));
@@ -52,13 +54,30 @@ final class ProfilesScreen extends Screen {
         panelHeight = Math.min(410, height - 16);
         left = (width - panelWidth) / 2;
         top = (height - panelHeight) / 2;
-        int inputY = top + 43;
-        name = new EditBox(font, left + 10, inputY, panelWidth - 93, 20, Component.literal("Profile name"));
+        BuiltinProfile builtin = BuiltinProfile.values()[builtinIndex];
+        addRenderableWidget(button(left + 10, top + 43, panelWidth - 94, builtin.label() + " >", () -> {
+            builtinIndex = (builtinIndex + 1) % BuiltinProfile.values().length; rebuild = true;
+        }, builtin.description()));
+        addRenderableWidget(button(left + panelWidth - 78, top + 43, 68, "Apply style", () -> {
+            try {
+                var warnings = profiles.applyBuiltin(builtin);
+                applied.run();
+                status = "Applied " + builtin.label() + (warnings.isEmpty() ? ". Save it as a profile to keep a copy." : " with defaulted fields.");
+            } catch (IOException exception) { status = exception.getMessage(); }
+        }, "Replace the current visual configuration with this built-in style. Save your own profile first if needed."));
+        int inputY = top + 69;
+        name = new EditBox(font, left + 10, inputY, panelWidth - 165, 20, Component.literal("Profile name"));
         name.setMaxLength(48);
         name.setHint(Component.literal("Profile name, e.g. clean-pvp"));
         name.setValue(draftName);
         name.setResponder(value -> { draftName = value; name.setTextColor(ProfileManager.validName(value) ? 0xFFE9EDF7 : 0xFFFF939F); });
         addRenderableWidget(name);
+        addRenderableWidget(button(left + panelWidth - 149, inputY, 67, "Rename", () -> {
+            try {
+                profiles.rename(selected, draftName);
+                selected = draftName; status = "Renamed to " + selected; refresh(); rebuild = true;
+            } catch (IOException | IllegalArgumentException exception) { status = exception.getMessage(); }
+        }, "Rename the selected profile to the name entered here. Existing profiles are never overwritten."));
         addRenderableWidget(button(left + panelWidth - 77, inputY, 67, "Save", () -> {
             try {
                 profiles.save(draftName);
@@ -68,7 +87,7 @@ final class ProfilesScreen extends Screen {
                 rebuild = true;
             } catch (IOException | IllegalArgumentException exception) { status = exception.getMessage(); }
         }, "Save current settings. An existing name updates that snapshot."));
-        GuiLayout.Rect area = new GuiLayout.Rect(left + 10, top + 71, panelWidth - 20, Math.max(25, panelHeight - 139));
+        GuiLayout.Rect area = new GuiLayout.Rect(left + 10, top + 97, panelWidth - 20, Math.max(25, panelHeight - 165));
         list = new ScrollPane(area, list == null ? 0 : list.scroll());
         int y = 3;
         for (String profileName : names) {
@@ -149,5 +168,6 @@ final class ProfilesScreen extends Screen {
     }
 
     @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) { }
     @Override public boolean isPauseScreen() { return false; }
 }

@@ -42,8 +42,9 @@ final class SettingControls {
     int add(ScrollPane pane, Setting<?> setting, int y) {
         int x = pane.area.x() + 8;
         int width = pane.area.width() - 16;
-        pane.decorate(y, 53, (graphics, rowY) -> {
-            Draw.roundedRect(graphics, x - 3, rowY, width + 6, 51, 4, 0xFF172132);
+        int rowHeight = setting instanceof ColorSetting ? 77 : 53;
+        pane.decorate(y, rowHeight, (graphics, rowY) -> {
+            Draw.roundedRect(graphics, x - 3, rowY, width + 6, rowHeight - 2, 4, Draw.withAlpha(0xFF172132, globals.panelOpacity.get().floatValue()));
             Draw.text(graphics, font, font.plainSubstrByWidth(setting.name(), width - 30), x + 3, rowY + 6, 0xFFC6D0E4, false);
             if (setting instanceof ColorSetting color) {
                 Draw.rect(graphics, x + width - 43, rowY + 5, 12, 9, color.get());
@@ -93,7 +94,35 @@ final class SettingControls {
         if (setting instanceof DoubleSetting number) hint += " Range: " + number.min() + " to " + number.max() + ".";
         control.setTooltip(Tooltip.create(Component.literal(hint)));
         add(pane, control, controlY);
-        return y + 58;
+        if (setting instanceof ColorSetting color) {
+            int[] swatches = {0xF4F7FF, 0x72DFFF, 0xB298FF, 0x71E6B5, 0xFFD080, 0xFF7F9E};
+            int swatchWidth = Math.min(25, (width-10)/6);
+            for (int i = 0; i < swatches.length; i++) {
+                int rgb = swatches[i];
+                var swatch = new ColorSwatch(x + i*(swatchWidth+2), swatchWidth, rgb, pane.area, () -> {
+                    color.set((color.get() & 0xFF000000) | rgb); state.drafts.remove(setting); state.invalidDrafts.remove(setting); rebuild.run();
+                });
+                swatch.setTooltip(Tooltip.create(Component.literal(String.format(Locale.ROOT, "#%06X — keep current alpha", rgb))));
+                add(pane, swatch, y + 51);
+            }
+        }
+        return y + rowHeight + 5;
+    }
+
+    private static final class ColorSwatch extends net.minecraft.client.gui.components.Button {
+        private final int rgb;
+        private final GuiLayout.Rect clip;
+        ColorSwatch(int x, int width, int rgb, GuiLayout.Rect clip, Runnable action) {
+            super(x, 0, width, 17, Component.literal(String.format(Locale.ROOT, "Color #%06X", rgb)), b -> action.run(), DEFAULT_NARRATION);
+            this.rgb = rgb;
+            this.clip = clip;
+        }
+        @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) { return clip.contains(event.x(), event.y()) && super.mouseClicked(event, doubleClick); }
+        @Override public boolean isMouseOver(double x, double y) { return clip.contains(x, y) && super.isMouseOver(x, y); }
+        @Override protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+            Draw.roundedRect(graphics, getX()+2, getY()+2, width-4, height-4, 4, 0xFF000000 | rgb);
+            if (isHoveredOrFocused()) Draw.border(graphics, getX(), getY(), width, height, 1, 0xFFEDF5FF);
+        }
     }
 
     private void add(ScrollPane pane, AbstractWidget widget, int offset) {

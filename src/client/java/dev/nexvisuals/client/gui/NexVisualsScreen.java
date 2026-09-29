@@ -2,6 +2,7 @@ package dev.nexvisuals.client.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.nexvisuals.client.render.Draw;
+import dev.nexvisuals.client.integration.ShaderIntegration;
 import dev.nexvisuals.core.config.GlobalSettings;
 import dev.nexvisuals.core.config.ProfileManager;
 import dev.nexvisuals.core.module.Category;
@@ -39,6 +40,7 @@ public final class NexVisualsScreen extends Screen {
     private KeybindSetting capturing;
     private boolean rebuildRequested;
     private boolean restoreSearchFocus;
+    private final java.util.Map<String, Integer> presetSelections = new java.util.HashMap<>();
 
     public NexVisualsScreen(Screen parent, ModuleRegistry registry, GlobalSettings globals, Runnable save) {
         this(parent, registry, globals, null, save);
@@ -63,9 +65,10 @@ public final class NexVisualsScreen extends Screen {
         int toolbarX = layout.left() + 8;
         int toolbarY = layout.toolbarY();
         int hudButtonRight = layout.left() + layout.width() - (profiles == null ? 8 : 82);
-        addRenderableWidget(button(hudButtonRight - 62, layout.top() + 9, 62, 21,
+        NexButton hudEditor = addRenderableWidget(button(hudButtonRight - 62, layout.top() + 9, 62, 21,
                 () -> "HUD editor", () -> false, () -> minecraft.setScreen(new HudEditorScreen(this, registry, globals, save)),
                 "Drag and align HUD widgets, including previews of disabled elements"));
+        hudEditor.active = minecraft.player != null && minecraft.level != null;
         if (profiles != null) {
             addRenderableWidget(button(layout.left() + layout.width() - 76, layout.top() + 9, 68, 21,
                     () -> "Profiles", () -> false, () -> minecraft.setScreen(new ProfilesScreen(this, profiles, globals, () -> {
@@ -150,7 +153,7 @@ public final class NexVisualsScreen extends Screen {
             int x = modulePane.area.x() + 5;
             int rowWidth = modulePane.area.width() - 10;
             modulePane.decorate(y, 47, (graphics, rowY) -> {
-                Draw.roundedRect(graphics, x, rowY, rowWidth, 47, 4, 0xFF172132);
+                Draw.roundedRect(graphics, x, rowY, rowWidth, 47, 4, Draw.withAlpha(0xFF172132, globals.panelOpacity.get().floatValue()));
                 Draw.text(graphics, font, module.category().displayName(), x + 7, rowY + 32, 0xFF8796B2, false);
             });
             NexButton select = button(x + 3, 0, rowWidth - 51, 23, module::name,
@@ -206,6 +209,36 @@ public final class NexVisualsScreen extends Screen {
         SettingControls factory = new SettingControls(font, globals, state, this::registerControl,
                 setting -> capturing = setting, this::requestRebuild);
         int y = 56;
+        if (state.globalSettings && ShaderIntegration.available()) {
+            NexButton shaders = button(x, 0, settingPane.area.width() - 16, 20,
+                    () -> "Open Iris shader settings", () -> false, () -> ShaderIntegration.openSettings(this),
+                    "Open the installed Iris public settings screen. NexVisuals never downloads or chooses shader packs.");
+            addWidget(shaders); settingPane.add(shaders, y); y += 24;
+        }
+        if (!state.globalSettings) {
+            if (!module.presets().isEmpty()) {
+                int index = presetSelections.getOrDefault(module.id(), 0) % module.presets().size();
+                var preset = module.presets().get(index);
+                NexButton choose = button(x, 0, settingPane.area.width() - 73, 20,
+                        () -> preset.name() + " >", () -> false, () -> {
+                            presetSelections.put(module.id(), (index + 1) % module.presets().size()); requestRebuild();
+                        }, "Cycle built-in styles. " + preset.description());
+                NexButton apply = button(x + settingPane.area.width() - 68, 0, 52, 20,
+                        () -> "Apply", () -> false, () -> {
+                            module.applyPreset(preset);
+                            state.drafts.clear(); state.invalidDrafts.clear(); requestRebuild();
+                        }, preset.description());
+                addWidget(choose); settingPane.add(choose, y);
+                addWidget(apply); settingPane.add(apply, y); y += 24;
+            }
+            for (var action : module.actions()) {
+                NexButton command = button(x, 0, settingPane.area.width() - 16, 20,
+                        action::name, () -> false, () -> {
+                            action.run().run(); state.drafts.clear(); state.invalidDrafts.clear(); requestRebuild();
+                        }, action.description());
+                addWidget(command); settingPane.add(command, y); y += 24;
+            }
+        }
         for (Setting<?> setting : settings) y = factory.add(settingPane, setting, y);
     }
 
@@ -232,7 +265,8 @@ public final class NexVisualsScreen extends Screen {
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         Draw.rect(graphics, 0, 0, width, height, 0xB80A0E18);
-        Draw.roundedRect(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 8, 0xF5101725);
+        Draw.roundedRect(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 8, Draw.withAlpha(0xFF101725, globals.panelOpacity.get().floatValue()));
+        Draw.border(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 1, Draw.withAlpha(globals.accentColor.get(), .5f));
         Draw.rect(graphics, layout.left() + 10, layout.top() + 12, 3, 18, globals.accentColor.get());
         Draw.text(graphics, font, "NEXVISUALS", layout.left() + 22, layout.top() + 10, 0xFFF2F5FF, false);
         Draw.text(graphics, font, font.plainSubstrByWidth("Make Minecraft feel like yours", Math.max(20, layout.width() - (profiles == null ? 104 : 178))),
@@ -250,8 +284,10 @@ public final class NexVisualsScreen extends Screen {
                 layout.left() + 10, layout.footerY() + 6, capturing == null ? 0xFF8796B2 : globals.accentColor.get(), false);
     }
 
+    @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) { }
+
     private void panelBackground(GuiGraphics graphics, GuiLayout.Rect rect) {
-        if (rect != null) Draw.roundedRect(graphics, rect.x(), rect.y(), rect.width(), rect.height(), 5, 0xFF0D1421);
+        if (rect != null) Draw.roundedRect(graphics, rect.x(), rect.y(), rect.width(), rect.height(), 5, Draw.withAlpha(0xFF0D1421, globals.panelOpacity.get().floatValue()));
     }
 
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
@@ -300,8 +336,10 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public void resize(int width, int height) { rememberScroll(); super.resize(width, height); }
-    void selectModule(String id) {
+    public void selectModule(String id) {
         state.selectedId = id;
+        registry.find(id).ifPresent(module -> state.category = module.category());
+        state.query = "";
         state.globalSettings = false;
         state.narrowDetails = true;
         state.settingScroll = 0;

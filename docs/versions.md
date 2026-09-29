@@ -13,6 +13,8 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
+Версия самого NexVisuals после исправления Mini HUD — `0.2.1-dev` (предыдущая сборка `0.2.0-dev`). Стек Minecraft/Fabric не менялся. Новые runtime-проверки оставлены пользователю по его прямому указанию.
+
 Проверено 28 сентября 2026 года. Источники:
 
 - [Релиз Minecraft 1.21.11](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-11).

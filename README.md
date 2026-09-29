@@ -1,5 +1,4 @@
 # NexVisuals
-<<<<<<< HEAD
 
 Самостоятельный клиентский Fabric-мод визуальной кастомизации для **Minecraft Java Edition 1.21.11**. Не является частью NexLauncher и не использует его код, сборку или данные.
 
@@ -37,27 +36,47 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.1.0-dev.jar`. Файл `-sources.jar` предназначен для изучения исходников, а не для установки в Minecraft. Для обычной установки нужны Minecraft **1.21.11**, Fabric Loader и Fabric API соответствующих версий.
+Основной артефакт: `build/libs/nexvisuals-0.2.1-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+
+## Что доступно
+
+- Hit Effects: Burst, Sparks, Rings, Slash, Impact; собственные процедурные masks, цвета/alpha, motion, scale/fade/easing и marker. Hit Sounds: шесть вариантов на базе ссылок на vanilla sounds.
+- Viewmodel: position/rotation, общий и per-axis scale, две руки, Copy/Mirror и шесть presets. Item Swing: семь стилей, duration/easing/amplitude и Custom transforms.
+- Fire Overlay, отдельные resting/blocking Shield transforms, ограниченные по lifetime Player Trails и локальный Cosmetic Hat.
+- Fireflies: дрейфующие мерцающие огоньки с цветами, плотностью, радиусом и режимом dusk/night. Elytra Trails: парные потоки только при локальном полёте, стили Aurora/Comet/Halo.
+- Custom Crosshair, шесть text HUD элементов и общий framework для восьми vanilla HUD layers с HUD Editor, позициями, scale, backgrounds и outlines.
+- Hotbar / Mini HUD: единый масштаб нижних индикаторов вокруг центра экрана, включая воздух, mount health и item name. Keystrokes показывает плитки с подсветкой фактически нажатых клавиш.
+- Container Visuals: общие panel/slot/hover/click эффекты и quick-move ghosts по однозначным локальным slot changes.
+- Sky Palette для vanilla Overworld sky; безопасная кнопка открытия публичного Iris settings screen при его наличии. Управление shader-pack presets не реализовано.
+- Локальные профили: save/load/update/rename/delete/defaults; встроенные общие стили Clean, Aurora и Cinematic. GUI генерирует настройки и module presets из metadata.
+
+Подробности, различия presets и сознательные ограничения — в [списке возможностей](docs/features.md). Новые функции **собраны и автоматически проверены, но визуально/runtime не проверены** в этом этапе. Запуск игры и visual QA выполняет пользователь.
 
 ## Использование
 
-Откройте NexVisuals клавишей **Right Shift** в мире или кнопкой **NexVisuals** в главном меню/меню паузы. Привязка меняется через стандартные Minecraft Options → Controls → Key Binds → NexVisuals и хранится Minecraft в `options.txt`.
+Откройте NexVisuals клавишей **Right Shift**, когда игрок находится в мире. Дополнительная кнопка есть в меню паузы; в главном меню её нет. Привязка меняется через стандартные Minecraft Options → Controls → Key Binds → NexVisuals и хранится Minecraft в `options.txt`.
 
 Все модули изначально выключены. Настройки применяются в памяти сразу, записываются при закрытии экрана и штатном завершении клиента. Цвета используют формат `#AARRGGBB`: первые две цифры задают непрозрачность. Кнопка `R` сбрасывает одну настройку, `Reset settings` — настройки выбранного модуля. Числовыми слайдерами можно управлять клавишами. `Ctrl+F` переводит фокус в поиск; `Page Up`/`Page Down` прокручивают настройки.
 
-Некорректный текст в редакторе выделяется красным: последнее корректное значение остаётся действующим. Панель настроек не является финальным дизайном; её структура подготовлена для последующего редизайна по визуальным референсам.
+Некорректный текст в редакторе выделяется красным: последнее корректное значение остаётся действующим. Встроенные module presets выбираются кнопкой со стрелкой и применяются через `Apply`; затем можно менять любые параметры. В Profiles кнопка `Apply style` применяет общий стиль Clean/Aurora/Cinematic, заменяя активную конфигурацию; перед этим можно сохранить свою. Для цветов есть быстрые swatches. В General настраивается opacity меню. Панель настроек не является финальным дизайном.
+
+HUD Editor открывается кнопкой в меню: drag для позиции, Shift для snap, стрелки для точной правки, right-click для enabled, `H` для скрытия нижней панели. Профили находятся в `config/nexvisuals/profiles/`, основной config — `config/nexvisuals.json`.
+
+Для исправленного мини-HUD: **HUD → Hotbar / Mini HUD → Mini → Apply**, включить модуль. `Linked Mini HUD` включён по умолчанию и использует один масштаб/позицию для всей нижней группы. Отдельные настройки дочерних слоёв сохраняются; отключите Link для независимого редактирования. Сброс всего конфига не требуется.
+
+Hit Effects и Hit Sounds показывают **локальную попытку атаки по видимой сущности**, а не подтверждение урона сервером. Все изменения остаются клиентскими; мод не изменяет reach, cooldown, hitboxes, item transfer logic или packets.
 
 ## Документация
 
 - [Версии и первичные источники](docs/versions.md).
+- [Модули, пресеты и ограничения](docs/features.md).
 - [Архитектура и добавление модулей](docs/architecture.md).
 - [Результаты проверки и ограничения](docs/validation.md).
 
 `src/main/java/dev/nexvisuals/core` содержит независимую Java-логику; `src/client/java/dev/nexvisuals/client` — интеграцию с игрой. Метаданные Fabric объявляют `environment: client` и точную зависимость `minecraft: =1.21.11`.
 
-Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Единственный служебный бинарный файл репозитория — официальный проверенный Gradle Wrapper JAR. Репозиторий создаётся без commit/push; решение о лицензии и публикации остаётся владельцу проекта.
+`build` запускает core tests, headless `clientTest`, проверку bytecode-контрактов Mixins и состава production JAR. Ни один тест не открывает окно Minecraft. Отдельно: `gradlew clientTest`, `gradlew verifyModJar`, `git diff --check`.
+
+Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Wrapper JAR — официальный проверенный служебный бинарник; PNG masks — исходные ресурсы мода. Их происхождение описано в [ASSETS.md](ASSETS.md). Решение о лицензии основного кода и публикации остаётся владельцу проекта. Codex не выполняет commit/push/tag/release.
 
 Это не официальный продукт Minecraft; он не связан с Mojang или Microsoft.
-=======
-A client-side Fabric mod for Minecraft focused on visual customization, HUDs, effects, animations, and PvP visuals.
->>>>>>> d91c625dc23216c37d4b5412ddc3313042df2aa9

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "global": {"accent_color": "#FFA695FF", "animation_duration": 180, "panel_opacity": 0.82},
+  "modules": {
+    "custom_crosshair": {"enabled": true, "settings": {"shape": "CIRCLE", "size": 5, "center_dot": true, "dot_size": 1, "color": "#FFB298FF"}},
+    "hit_visuals": {"enabled": true, "settings": {"preset": "IMPACT", "flash": 0.025}},
+    "hit_sounds": {"enabled": true, "settings": {"preset": "BELL", "volume": 0.3, "pitch": 1.4}},
+    "viewmodel": {"enabled": true, "settings": {"main_scale": 0.85, "main_y": -0.18, "main_roll": -22}},
+    "swing": {"enabled": true, "settings": {"style": "SLASH", "amplitude": 0.75}},
+    "player_trails": {"enabled": true, "settings": {"style": "SILK"}},
+    "cosmetic_hat": {"enabled": true, "settings": {}},
+    "container_visuals": {"enabled": true, "settings": {"panel": "#383D284F", "accent": "#C0B299FF", "opening": "SCALE", "motion": "ARC"}},
+    "menu_backdrop": {"enabled": true, "settings": {"color": "#90312548"}},
+    "vanilla_hotbar": {"enabled": true, "settings": {"background": true, "selected_outline": true, "accent": "#CCA695FF"}}
+  }
+}

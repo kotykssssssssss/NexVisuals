@@ -1,5 +1,9 @@
 {
   "key.category.nexvisuals.controls": "NexVisuals",
-  "key.nexvisuals.open_settings": "Open NexVisuals"
+  "key.nexvisuals.open_settings": "Open NexVisuals",
+  "nexvisuals.menu.enable": "NexVisuals menu",
+  "nexvisuals.menu.appearance": "Menu style...",
+  "nexvisuals.menu.vanilla": "Vanilla",
+  "nexvisuals.menu.subtitle": "NEXVISUALS / CLASSIC",
+  "nexvisuals.menu.loading_tip": "A new adventure is taking shape..."
 }
-

@@ -4,6 +4,7 @@ import dev.nexvisuals.core.module.Category;
 import dev.nexvisuals.core.setting.BooleanSetting;
 import dev.nexvisuals.core.setting.ColorSetting;
 import dev.nexvisuals.core.setting.IntSetting;
+import dev.nexvisuals.core.setting.DoubleSetting;
 import dev.nexvisuals.core.setting.Setting;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +16,9 @@ public final class GlobalSettings {
             "Remember the selected category and module between sessions.", true);
     public final ColorSetting accentColor = new ColorSetting("accent_color", "Accent color",
             "Interface highlight color, including alpha.", 0xFF8B9DFF);
-    private final List<Setting<?>> settings = List.of(animationDuration, rememberGui, accentColor);
+    public final DoubleSetting panelOpacity = new DoubleSetting("panel_opacity", "Menu panel opacity",
+            "Opacity of NexVisuals panels over the live world.", .9, .35, 1);
+    private final List<Setting<?>> settings = List.of(animationDuration, rememberGui, accentColor, panelOpacity);
     private Category selectedCategory = Category.HUD;
     private String selectedModule = "";
 

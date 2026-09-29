@@ -1,6 +1,8 @@
 package dev.nexvisuals.core.config;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.nio.charset.StandardCharsets;
 import dev.nexvisuals.core.module.ModuleRegistry;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,8 +14,8 @@ import java.util.regex.Pattern;
 
 /** Named local JSON snapshots. Profile IDs are deliberately filesystem-safe on Windows and Unix. */
 public final class ProfileManager {
-    private static final Pattern NAME = Pattern.compile("[a-z0-9][a-z0-9_-]{0,47}");
-    private static final Pattern DEVICE = Pattern.compile("con|prn|aux|nul|com[1-9]|lpt[1-9]");
+    private static final Pattern NAME = Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N} _-]{0,47}");
+    private static final Pattern DEVICE = Pattern.compile("con|prn|aux|nul|com[1-9]|lpt[1-9]", Pattern.CASE_INSENSITIVE);
     private final Path directory;
     private final ModuleRegistry registry;
     private final GlobalSettings globals;
@@ -27,7 +29,7 @@ public final class ProfileManager {
     public Path directory() { return directory; }
 
     public static boolean validName(String name) {
-        return name != null && NAME.matcher(name).matches() && !DEVICE.matcher(name).matches();
+        return name != null && name.equals(name.strip()) && NAME.matcher(name).matches() && !DEVICE.matcher(name).matches();
     }
 
     public List<String> list() throws IOException {
@@ -73,12 +75,35 @@ public final class ProfileManager {
         return Files.deleteIfExists(profile);
     }
 
+    public void rename(String name, String replacement) throws IOException {
+        Path source = profilePath(name), target = profilePath(replacement);
+        if (source.equals(target)) return;
+        if (!Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Profile does not exist: " + name);
+        // Never overwrite another profile implicitly.
+        Files.move(source, target);
+    }
+
     public void restoreDefaults() {
         new ConfigManager(directory.resolve("defaults.json"), registry, globals).resetDefaults();
     }
 
+    /** Built-in styles use the exact same validation/default behavior as user JSON snapshots. */
+    public List<String> applyBuiltin(BuiltinProfile preset) throws IOException {
+        Objects.requireNonNull(preset);
+        ConfigManager config = new ConfigManager(directory.resolve("builtin.json"), registry, globals);
+        JsonObject previous = config.snapshot();
+        try (var input = ProfileManager.class.getResourceAsStream(preset.resource())) {
+            if (input == null) throw new IOException("Missing bundled preset: " + preset.label());
+            JsonObject root = JsonParser.parseString(new String(input.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+            return config.apply(root);
+        } catch (RuntimeException | IOException exception) {
+            config.apply(previous);
+            throw new IOException("Cannot apply bundled preset: " + preset.label(), exception);
+        }
+    }
+
     private Path profilePath(String name) throws IOException {
-        if (!validName(name)) throw new IllegalArgumentException("Use 1–48 lowercase letters, digits, underscores or hyphens; avoid device names");
+        if (!validName(name)) throw new IllegalArgumentException("Use 1–48 letters, digits, spaces, underscores or hyphens; no leading/trailing spaces or device names");
         ensureDirectory();
         Path path = directory.resolve(name + ".json").normalize();
         if (!path.getParent().equals(directory) || Files.isSymbolicLink(path)) {

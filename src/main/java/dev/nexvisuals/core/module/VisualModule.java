@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import com.google.gson.JsonElement;
+import com.google.gson.Gson;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** Small modules own their settings and optional lifecycle, while hooks live in client code. */
 public abstract class VisualModule {
@@ -15,6 +19,8 @@ public abstract class VisualModule {
     private final List<Setting<?>> settings = new ArrayList<>();
     private final List<Setting<?>> settingsView = Collections.unmodifiableList(settings);
     private boolean enabled;
+    private final List<ModulePreset> presets = new ArrayList<>();
+    private final List<ModuleAction> actions = new ArrayList<>();
 
     protected VisualModule(String id, String name, String description, Category category) {
         if (id == null || !id.matches("[a-z][a-z0-9_]*")) {
@@ -40,6 +46,37 @@ public abstract class VisualModule {
     public final String description() { return description; }
     public final Category category() { return category; }
     public final List<Setting<?>> settings() { return settingsView; }
+    public final List<ModulePreset> presets() { return Collections.unmodifiableList(presets); }
+    public final List<ModuleAction> actions() { return Collections.unmodifiableList(actions); }
+
+    /** Presets are explicit user actions, never side effects of config deserialization. */
+    protected final void preset(String name, String description, Object... pairs) {
+        if (pairs.length % 2 != 0) throw new IllegalArgumentException("Expected setting/value pairs");
+        Map<String, JsonElement> values = new LinkedHashMap<>();
+        Gson gson = new Gson();
+        for (int i = 0; i < pairs.length; i += 2) {
+            String key = (String) pairs[i];
+            if (settings.stream().noneMatch(s -> s.id().equals(key))) throw new IllegalArgumentException("Unknown preset setting " + key);
+            values.put(key, gson.toJsonTree(pairs[i + 1]));
+        }
+        presets.add(new ModulePreset(name, description, values));
+    }
+    protected final void action(String name, String description, Runnable operation) {
+        actions.add(new ModuleAction(name, description, operation));
+    }
+    public final void applyPreset(ModulePreset preset) {
+        if (!presets.contains(preset)) throw new IllegalArgumentException("Preset belongs to another module");
+        Map<Setting<?>, JsonElement> previous = new LinkedHashMap<>();
+        settings.forEach(s -> previous.put(s, s.toJson()));
+        try {
+            // A named style is a complete starting point; omitted fields use this module's defaults.
+            settings.forEach(Setting::reset);
+            settings.forEach(s -> { if (preset.values().containsKey(s.id())) s.fromJson(preset.values().get(s.id())); });
+        } catch (RuntimeException exception) {
+            previous.forEach(Setting::fromJson);
+            throw exception;
+        }
+    }
     public final boolean enabled() { return enabled; }
     public final void toggle() { setEnabled(!enabled); }
 
