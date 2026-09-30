@@ -2,9 +2,16 @@ package dev.nexvisuals.core.visual;
 
 /** Reference color math for the lightweight GPU pass. Black remains black, including with gamma/contrast edits. */
 public final class ColorGrade {
-    public record Parameters(double brightness,double contrast,double saturation,double gamma,double temperature,double tint) { }
+    public record Parameters(double brightness,double contrast,double saturation,double gamma,double temperature,double tint,double exposure,double highlights) {
+        public Parameters(double brightness,double contrast,double saturation,double gamma,double temperature,double tint) {
+            this(brightness,contrast,saturation,gamma,temperature,tint,0,0);
+        }
+    }
     private ColorGrade() { }
     public static double[] apply(double r,double g,double b,Parameters p) {
+        double originalLuma=r*.2126+g*.7152+b*.0722;
+        double multiplier=Math.pow(2,p.exposure())*(1+p.highlights()*SkyMath.smooth(.55,.95,originalLuma));
+        r*=multiplier; g*=multiplier; b*=multiplier;
         double luminance=r*.2126+g*.7152+b*.0722;
         r=(luminance+(r-luminance)*p.saturation())*p.brightness()*(1+p.temperature()*.12+p.tint()*.06);
         g=(luminance+(g-luminance)*p.saturation())*p.brightness()*(1-p.tint()*.10);

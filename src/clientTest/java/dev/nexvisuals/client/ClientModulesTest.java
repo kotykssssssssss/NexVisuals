@@ -19,7 +19,7 @@ class ClientModulesTest {
             var settingIds = new HashSet<String>();
             for (var s : module.settings()) assertTrue(settingIds.add(s.id()), module.id()+"/"+s.id());
         }
-        assertTrue(ids.containsAll(java.util.Set.of("viewmodel", "swing", "shield", "fire_overlay", "hit_visuals", "player_trails", "cosmetic_hat", "container_visuals", "fireflies", "elytra_trails", "console_menu", "skybox", "post_processing")));
+        assertTrue(ids.containsAll(java.util.Set.of("viewmodel", "swing", "shield", "fire_overlay", "hit_visuals", "player_trails", "cosmetic_hat", "container_visuals", "fireflies", "elytra_trails", "console_menu", "skybox", "post_processing", "live_background")));
     }
     @Test void everyBuiltInPresetCanBeAppliedAndSavedWithoutValidationWarnings() throws Exception {
         ClientModules c = new ClientModules();

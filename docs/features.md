@@ -1,4 +1,4 @@
-# Возможности 0.3.0-dev
+# Возможности 0.4.0-dev
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
 
@@ -18,6 +18,23 @@
 **World loading theme** оформляет обычный `LevelLoadingScreen`: панорама, тонировка и декоративные блоки внизу. Реальная карта генерации chunks, progress, narration и момент входа в мир остаются vanilla. Декоративные блоки не изображают процент готовности. Nether/End portal screens и начальный Mojang resource-loading splash не заменяются.
 
 Это собственное оформление в духе консольного Minecraft, без копирования Xbox artwork, звуков или кода. Сторонние title-screen replacements и добавляемые ими кнопки пока не проверены. Настройки остальных экранов/контейнеров остаются в Menu Backdrop/Container Visuals; это не глобальная замена всех GUI.
+
+## Live Background
+
+**Interface → Live Background** — процедурные GPU-обои, независимые от расположения и действий кнопок Console Menu. Работают на vanilla/Console title screen, в NexVisuals editor и Profiles; pause menu включается отдельно. Loading screens, containers и игровой HUD не заменяются. Выберите `Background: Vanilla` или выключите модуль для прежнего фона без потери цветов. Кнопка Vanilla в Console Menu меняет его оформление отдельно от обоев.
+
+| Preset | Форма и движение |
+| --- | --- |
+| NexVisuals | Несколько диагональных violet/cyan лент с мягкой глубиной и тонкими светлыми краями |
+| Aurora | Горизонтальные изогнутые световые занавеси с медленным движением полос |
+| Flow | Плавно дрейфующие эллиптические цветовые поля без лент и частиц |
+| Nebula | Два масштаба процедурного облачного поля, тёмные violet глубины, редкие motes |
+| Waves | Широкие S-образные зелёные полосы, теневой край и светлая кайма по направлению dashboard reference |
+| Minimal | Спокойный диагональный gradient с едва заметным движением |
+
+Три ARGB-цвета задают primary/secondary/accent layers; alpha регулирует вклад каждого. Speed и Motion amount управляют движением, ноль замораживает фон; Console Menu Reduced motion также останавливает его. Intensity, Brightness, Saturation, Shape softness, Subtle motes (0–32) и Background dim изменяют вид сразу за редактором. Softness — аналитическая мягкость форм, не дорогой blur. Motes — ограниченная GPU-сетка, приблизительное количество, без particle objects и истории.
+
+В title screen фон занимает один fullscreen triangle с 96-byte uniform block, без дополнительных framebuffers. В editor/Profiles/pause он рисуется в переиспользуемый canvas половинной ширины/высоты окна и передаётся штатной GUI-очереди одним textured quad. Это сохраняет порядок после игрового HUD и перед menu controls; canvas пересоздаётся только при resize и освобождается при возвращении на title/выходе/выключении. Scene copy, readback, CPU meshes и внешние assets не нужны. Время монотонное, независимо от FPS. Выход из поддерживаемого меню останавливает clock без catch-up. При shader/draw failure возвращается обычный фон; статус виден в редакторе, OFF/ON повторяет попытку. При активных обоях старые Console tint/pixels не накладываются второй раз, панель/кнопки остаются. Preview/F4 в мире скрывает обои вместе с редактором, чтобы оценить sky/post effects.
 
 ## Hit Effects и Sounds
 
@@ -87,6 +104,8 @@ Opening Fade/Scale/Slide анимирует декоративную рамку;
 
 General: gradient/intensity, horizon height/softness, sky brightness/saturation/RGB tint и day/night influence. Последняя настройка смешивает реальные day/sunset/night палитры с day palette, не меняет часы мира. Для Day, Sunset/Sunrise и Night отдельно задаются sky/horizon/zenith RGB. Переход основан на реальном угле солнца с smoothstep. Alpha sky-палитр не используется; alpha атмосферных/небесных tint умножает их интенсивность. Minecraft сохраняет обычные clouds, rain, sunrise disc, солнце/луну и moon phases.
 
+**Dynamic cycle** добавляет отдельные morning sky/horizon/zenith и day/twilight/night brightness multipliers. Направление реального sun angle различает рассвет и закат; четыре состояния смешиваются непрерывными нормализованными весами, без переключений времени мира. Day atmospheric haze мягко осветляет горизонт; Soft sun halo следует реальному солнцу и его tint/opacity. `Fog follows sky cycle` использует текущую horizon palette, умноженную на Fog color, с обычным Fog blend. Все эти поля редактируемые. В старых presets/config dynamic cycle, haze, halo и cycle fog выключены, чтобы сохранить удачный ночной вид.
+
 Stars: Vanilla / Custom / Disabled. Custom поддерживает 0–4000 звёзд, размер, Pixel/Diamond/Soft, RGB/alpha, brightness и отдельный twinkle каждой звезды с speed/intensity. В Vanilla размер/количество/форма остаются Minecraft-owned; доступна общая пульсация, tint, brightness/opacity. Звёзды появляются по обычной ночной видимости и затухают от дождя. Sun & Moon имеют отдельные size, ARGB tint и opacity, сохраняя реальные пути движения. Fog — RGB/alpha blend и density 1–3: значения больше 1 только усиливают обычный атмосферный fog, никогда не увеличивают visibility distance.
 
 | Preset | Вид и состав |
@@ -98,32 +117,39 @@ Stars: Vanilla / Custom / Disabled. Custom поддерживает 0–4000 з�
 | Blood Moon | Большая красная луна, crimson nebula и звёзды-ромбы |
 | Cyber | Cyan aurora, magenta nebula, cyan diamonds и редкие meteors |
 | Minimal | 600 pixel stars, сниженная saturation, без twinkle/glow/atmosphere motion |
+| Enhanced Day | Чистое голубое небо, светлый горизонт, peach dawn, тёплый закат; лёгкие haze/halo и familiar blue night |
+| Dynamic / NexVisuals | Blue day → мягкий morning → rose-orange dusk → violet night, restrained nebula/aurora, звёзды и meteors; плавные brightness/fog transitions |
 
-Настройки применяются в памяти сразу. Preset — исходный набор параметров; редактирование не вызывает его повторного применения. `Current: Custom` появляется при отличии от всех готовых наборов. Разделы General / Day / Sunset / Night / Stars / Sun & Moon / Atmosphere / Fog доступны в существующем редакторе. Reset сбрасывает **весь** модуль даже при выбранном разделе. Preview/F4 скрывает редактор без закрытия и записи промежуточной конфигурации; F4/Esc возвращает настройки.
+Настройки применяются в памяти сразу. Preset — исходный набор параметров; редактирование не вызывает его повторного применения. `Current: Custom` появляется при отличии от всех готовых наборов. Разделы General / Day / Sunset / Night / Dynamic cycle / Stars / Sun & Moon / Atmosphere / Fog доступны в существующем редакторе. Reset сбрасывает **весь** модуль даже при выбранном разделе. Preview/F4 скрывает редактор без закрытия и записи промежуточной конфигурации; F4/Esc возвращает настройки.
 
 Skybox работает в Overworld air; Nether/End, water/lava/powder snow, Blindness/Darkness остаются обычными. Это процедурный skybox, без загрузки пользовательских cubemap/texture files. Старый **Sky Palette** сохранён для старых конфигов; активный новый Skybox имеет приоритет. Sky Palette по-прежнему отключает собственный tint при любом установленном Iris.
 
 ## Lightweight Shaders / Post Processing
 
-**Post Processing → Lightweight Shaders** — один проход над изображением мира, после vanilla entity post effects и перед HUD/UI. Общая intensity; color grading можно выключать независимо. Параметры: brightness, contrast, saturation, bounded gamma, temperature и green/magenta balance. Это display color curves, без изменения block light. Чёрный остаётся чёрным в color grading.
+**Post Processing → Lightweight Shaders** — эффекты изображения мира после vanilla entity post effects и перед HUD/UI. Общая intensity; color grading можно выключать независимо. Параметры: brightness, contrast, saturation, bounded gamma, temperature, green/magenta balance, **Exposure** (−0.65…0.65 stops) и **Highlights enhancement**. Последнее работает только в ярком диапазоне. Это display color curves, без изменения block light. Чёрный остаётся чёрным в color grading.
 
-Независимые эффекты: vignette с intensity/radius/softness/ARGB, небольшой bright-neighbor glow с threshold/radius/intensity, chromatic separation до 3 pixels, multiplicative film grain, color filter, локальный night tint и дополнительная damage flash по обычному `hurtTime`. Glow — четыре соседних bright samples в том же проходе, **не HDR bloom**. Нет depth effects, теней, SSR, DOF, volumetrics или управления чужими shader packs. Дополнительная flash не заменяет vanilla damage information.
+Независимые эффекты: vignette с intensity/radius/softness/ARGB, selective glow, chromatic separation до 3 pixels, multiplicative film grain с size/intensity, color filter, local night tint и damage flash по обычному `hurtTime`. **Peripheral softness** мягко сглаживает только периферию четырьмя соседними samples, оставляя центр и последующий HUD/UI резкими. Grain обновляется на 24 Hz, ослаблен в тенях/ярких участках и сохраняет black.
+
+**Compact glow** остаётся четырьмя bright-neighbor samples. **Wide glow** извлекает яркие участки по luminance с мягким threshold в переиспользуемый target размером ¼ ширины и ¼ высоты окна, затем реконструирует мягкий ореол девятью взвешенными samples. Радиус 1–12 display pixels. Это локальное LDR glow, **не HDR bloom**: яркость ниже threshold не поднимается всем экраном. Wide требует один дополнительный маленький pass; Compact — только основной pass. Нет depth effects, теней, SSR, DOF, volumetrics или управления чужими shader packs. Дополнительная flash не заменяет vanilla damage information.
 
 | Preset | Настройки |
 | --- | --- |
 | Vanilla+ | Обычные цвета и слабая vignette |
-| Vibrant | Более насыщенные цвета, лёгкий contrast и glow |
-| Cinematic | Приглушённые тёплые цвета, grain и vignette |
+| Vibrant | Более насыщенные цвета, contrast, selective highlights и Compact glow |
+| Cinematic | Приглушённые тёплые цвета, зерно, vignette, Wide glow и мягкая периферия |
 | Cold | Холодный баланс, умеренная saturation и blue night tint |
 | Warm | Золотистый баланс, слабый glow и чуть больше saturation |
 | Night | Более тёмные холодные цвета, усиленный night tint |
-| Retro | Сниженная saturation, grain и небольшое RGB separation |
+| Retro | Сниженная saturation, более крупное grain и небольшое RGB separation |
+| Dreamy | Широкие мягкие ореолы ярких участков и заметнее сглаженная периферия при почти естественной палитре |
 
-Оба новых модуля изначально выключены и используют обычные config/profiles schema 1. Отсутствующие новые поля получают defaults; старые ID и global profiles не меняются. Общие Clean/Aurora/Cinematic profiles сбрасывают неуказанные новые модули; сначала сохраните собственный профиль.
+Все новые модули изначально выключены и используют обычные config/profiles schema 1. Отсутствующие новые поля получают defaults; старые ID и global profiles не меняются. Старые post configs используют Compact, нулевую Exposure и выключенную Peripheral softness. Общие Clean/Aurora/Cinematic profiles сбрасывают неуказанные новые модули; сначала сохраните собственный профиль.
 
 ### Iris и fallback
 
 Если публичный [`IrisApi.isShaderPackInUse()`](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/api/java/net/irisshaders/iris/api/v0/IrisApi.java) сообщает активный shader pack, Skybox и Lightweight Shaders **приостанавливают GPU hooks**, сохраняя enabled/settings. Причина видна в GUI. Если API не удаётся безопасно проверить, применяется тот же fallback. При установленном Iris без активного pack новые модули могут работать; это требует runtime проверки. Iris не обязателен. General → Open Iris shader settings использует существующий public API, не выбирает и не скачивает packs.
+
+Live Background рисуется отдельно в UI и не входит в world shader chain; установленный Iris не блокирует его намеренно. Практическая совместимость новых sky/post/wallpaper paths с конкретными Sodium/Iris JAR пока не подтверждена — пользователь проверяет её вручную. Ни один из этих модов не является обязательной зависимостью NexVisuals.
 
 GPU compile/draw failure отключает соответствующий optional pass до OFF/ON и записывает ошибку один раз в `latest.log`. Pipelines компилируются по требованию, не включены в список обязательных vanilla pipelines. Post-processing также приостанавливается при Blindness/Darkness у camera entity. Наличие guard **не подтверждает** практическую совместимость с Sodium/Iris: она оставлена пользователю для проверки.
 

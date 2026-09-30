@@ -56,7 +56,7 @@ public final class SkyboxRenderer implements AutoCloseable {
                     dome=RenderSystem.getDevice().createBuffer(()->"NexVisuals sky dome",GpuBuffer.USAGE_VERTEX,mesh.vertexBuffer());
                 }
             }
-            skyUniforms=new MappableRingBuffer(()->"NexVisuals sky settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,144);
+            skyUniforms=new MappableRingBuffer(()->"NexVisuals sky settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,176);
         }
         var encoder=RenderSystem.getDevice().createCommandEncoder();
         try(var view=encoder.mapBuffer(skyUniforms.currentBuffer(),false,true)) {
@@ -67,6 +67,8 @@ public final class SkyboxRenderer implements AutoCloseable {
             rgb(u,module.nebulaColor.get(),1); rgb(u,module.auroraColor.get(),1);
             u.putVec4(module.glow.get()?module.glowIntensity.get().floatValue():0,module.shootingStars.get()?module.meteorInterval.get().floatValue():0,module.atmosphereSpeed.get().floatValue(),(float)frame.sunset());
             rgb(u,module.glowColor.get(),1);
+            u.putVec4(module.haze.get().floatValue()*(float)frame.day(),module.sunHalo.get().floatValue()*(1-(float)frame.night()),frame.sunAngle(),0);
+            rgb(u,module.sunTint.get(),module.sunOpacity.get().floatValue());
         }
         draw(DOME,dome,domeIndices,skyUniforms.currentBuffer(),"SkyConfig",RenderSystem.getModelViewMatrix());
         skyUniforms.rotate();

@@ -18,6 +18,7 @@ public final class ClientModules {
     public final CameraModule camera = registry.register(new CameraModule());
     public final MenuBackdropModule backdrop = registry.register(new MenuBackdropModule());
     public final ConsoleMenuModule consoleMenu = registry.register(new ConsoleMenuModule());
+    public final dev.nexvisuals.client.background.LiveBackgroundModule liveBackground = registry.register(new dev.nexvisuals.client.background.LiveBackgroundModule());
     public final FireOverlayModule fire = registry.register(new FireOverlayModule());
     public final SkyPaletteModule sky = registry.register(new SkyPaletteModule());
     public final SkyboxModule skybox = registry.register(new SkyboxModule());

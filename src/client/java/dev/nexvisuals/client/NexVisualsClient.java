@@ -47,6 +47,7 @@ public final class NexVisualsClient implements ClientModInitializer {
     public CameraModule camera() { return catalog.camera; }
     public MenuBackdropModule backdrop() { return catalog.backdrop; }
     public ConsoleMenuModule consoleMenu() { return catalog.consoleMenu; }
+    public dev.nexvisuals.client.background.LiveBackgroundModule liveBackground() { return catalog.liveBackground; }
     public SwingModule swing() { return catalog.swing; }
     public ShieldModule shield() { return catalog.shield; }
     public FireOverlayModule fire() { return catalog.fire; }
@@ -62,6 +63,7 @@ public final class NexVisualsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(catalog.trails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.liveBackground::tick);
         catalog.hat.register();
         config = new ConfigManager(FabricLoader.getInstance().getConfigDir().resolve("nexvisuals.json"), modules, globals);
         profiles = new ProfileManager(FabricLoader.getInstance().getConfigDir().resolve("nexvisuals/profiles"), modules, globals);
@@ -104,7 +106,7 @@ public final class NexVisualsClient implements ClientModInitializer {
                         .bounds(6, 6, 98, 20).build());
             }
         });
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { catalog.skybox.closeRenderer(); catalog.post.closeRenderer(); save(); });
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { catalog.skybox.closeRenderer(); catalog.post.closeRenderer(); catalog.liveBackground.closeRenderer(); save(); });
         LOGGER.info("NexVisuals initialized: Minecraft 1.21.11, {} visual modules", modules.all().size());
     }
 

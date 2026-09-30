@@ -13,7 +13,7 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Версия NexVisuals с Custom Skybox / Lightweight Shaders — `0.3.0-dev`, после `0.2.2-dev` с Console Menu. Стек Minecraft/Fabric не менялся. Новые hooks исследованы по фактическим `SkyRenderer`, `SkyRenderState`, `FogRenderer`, `GameRenderer`, `RenderPipeline`, `ShaderManager` и mapped bytecode 1.21.11. Runtime/GPU-проверки оставлены пользователю по его прямому указанию.
+Текущая версия NexVisuals — `0.4.0-dev`: Dynamic/Enhanced Day sky, GPU Live Background и расширенные lightweight effects поверх `0.3.0-dev`. Стек Minecraft/Fabric не менялся. Hooks исследованы по фактическим `SkyRenderer`, `SkyRenderState`, `FogRenderer`, `GameRenderer`, `RenderPipeline`, `ShaderManager`, `PanoramaRenderer`, `Screen`, `TitleScreen`, `PauseScreen` и mapped bytecode **1.21.11**. Runtime/GPU-проверки оставлены пользователю по его прямому указанию; пользователь уже подтвердил внешний вид предыдущего ночного skybox.
 
 Проверено 28 сентября 2026 года. Источники:
 

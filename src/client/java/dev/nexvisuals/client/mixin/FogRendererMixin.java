@@ -19,7 +19,7 @@ abstract class FogRendererMixin {
         var mod=NexVisualsClient.instance();
         if(mod==null || !mod.skybox().fog.get() || !mod.skybox().eligible(level,camera)) return;
         var module=mod.skybox();
-        int tint=module.fogColor.get();
+        int tint=module.currentFogColor(camera,delta.getGameTimeDeltaPartialTick(false));
         float blend=module.fogBlend.get().floatValue()*(tint>>>24)/255f;
         // Mutate the computed color too: setupFog returns this object for the matching clear color.
         Vector4f color=args.get(2);

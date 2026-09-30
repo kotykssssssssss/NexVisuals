@@ -12,6 +12,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.material.FogType;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 
 /** A procedural sky dome and star field, with independent settings and the existing config/preset codecs. */
 public final class SkyboxModule extends VisualModule {
@@ -34,6 +35,16 @@ public final class SkyboxModule extends VisualModule {
     public final ColorSetting nightSky=color("night_sky","Night sky",0xFF0B142D);
     public final ColorSetting nightHorizon=color("night_horizon","Night horizon",0xFF26314C);
     public final ColorSetting nightZenith=color("night_zenith","Night zenith",0xFF030817);
+    public final BooleanSetting dynamicCycle=add(new BooleanSetting("dynamic_cycle","Four-phase sky cycle","Separate morning colors and time-dependent brightness. OFF preserves previous three-palette behavior.",false));
+    public final ColorSetting morningSky=color("morning_sky","Morning sky",0xFFB69CBC);
+    public final ColorSetting morningHorizon=color("morning_horizon","Morning horizon",0xFFF9D1A5);
+    public final ColorSetting morningZenith=color("morning_zenith","Morning zenith",0xFF6577A8);
+    public final DoubleSetting dayBrightness=number("day_brightness","Day brightness multiplier",1,.7,1.3);
+    public final DoubleSetting twilightBrightness=number("twilight_brightness","Twilight brightness multiplier",1,.7,1.3);
+    public final DoubleSetting nightBrightness=number("night_brightness","Night brightness multiplier",1,.7,1.3);
+    public final DoubleSetting haze=number("day_haze","Day atmospheric haze",0,0,.4);
+    public final DoubleSetting sunHalo=number("sun_halo","Soft sun halo",0,0,.4);
+    public final BooleanSetting cycleFog=add(new BooleanSetting("cycle_fog","Fog follows sky cycle","Blend fog towards the current horizon palette, multiplied by your Fog color. No change to world lighting.",false));
     public final EnumSetting<Stars> stars=add(new EnumSetting<>("stars","Stars","Vanilla geometry, custom procedural field or disabled.",Stars.VANILLA,Stars.class));
     public final EnumSetting<StarShape> starShape=add(new EnumSetting<>("star_shape","Star type","Pixel squares, diamonds or soft round stars; custom mode only.",StarShape.SOFT,StarShape.class));
     public final IntSetting starAmount=add(new IntSetting("star_amount","Star amount","Custom stars, capped at 4000. Geometry rebuilds only when edited.",1800,0,4000));
@@ -69,7 +80,8 @@ public final class SkyboxModule extends VisualModule {
     private final SkyboxRenderer renderer=new SkyboxRenderer(this);
     private Frame frame;
     private String failure="";
-    public record Frame(int sky, int horizon, int zenith, double night, double sunset, float rain, float starVisibility, double seconds) { }
+    public record Frame(int sky, int horizon, int zenith, double day, double night, double sunset,
+                        float sunAngle, float rain, float starVisibility, double seconds) { }
 
     public SkyboxModule() {
         super("skybox","Custom Skybox","Procedural gradient dome, custom stars, aurora, nebula and shooting stars. Keeps real sun/moon paths and phases. Pauses for active Iris packs.",Category.WORLD);
@@ -77,6 +89,7 @@ public final class SkyboxModule extends VisualModule {
         group("Day colors",daySky,dayHorizon,dayZenith);
         group("Sunset / sunrise colors",sunsetSky,sunsetHorizon,sunsetZenith);
         group("Night colors",nightSky,nightHorizon,nightZenith);
+        group("Dynamic cycle",dynamicCycle,morningSky,morningHorizon,morningZenith,dayBrightness,twilightBrightness,nightBrightness,haze,sunHalo,cycleFog);
         group("Stars",stars,starShape,starAmount,starSize,starColor,starBrightness,starOpacity,twinkle,twinkleSpeed,twinkleIntensity);
         group("Sun & Moon",sunSize,sunOpacity,sunTint,moonSize,moonOpacity,moonTint);
         group("Atmosphere",aurora,auroraIntensity,auroraColor,nebula,nebulaIntensity,nebulaColor,atmosphereSpeed,shootingStars,meteorInterval,glow,glowIntensity,glowColor);
@@ -88,6 +101,22 @@ public final class SkyboxModule extends VisualModule {
         preset("Blood Moon","A large red moon with a crimson nebula and sharp stars.","stars","CUSTOM","star_shape","DIAMOND","moon_size",1.7,"moon_tint","#FFFF6464","night_sky","#FF2C1027","night_horizon","#FF662434","night_zenith","#FF080914","nebula",true,"nebula_color","#FF962642","nebula_intensity",.3);
         preset("Cyber","Cyan aurora, magenta nebula, diamonds and occasional meteors.","stars","CUSTOM","star_shape","DIAMOND","star_amount",2200,"star_color","#FF8DEEFF","aurora",true,"aurora_intensity",.65,"aurora_color","#FF3FE6DF","nebula",true,"nebula_intensity",.4,"nebula_color","#FFAD42C6","shooting_stars",true,"night_sky","#FF17152F");
         preset("Minimal","A calm gradient with a sparse pixel star field and no atmosphere motion.","stars","CUSTOM","star_shape","PIXEL","star_amount",600,"twinkle",false,"horizon_glow",false,"atmosphere_speed",0,"saturation",.75);
+        preset("Enhanced Day","Clear blue day, peach dawn, warm sunset and familiar night; light horizon haze.",
+                "dynamic_cycle",true,"day_sky","#FF66AFE8","day_horizon","#FFCDE7EF","day_zenith","#FF347DC0",
+                "sunset_sky","#FFAB7295","sunset_horizon","#FFFFB17A","sunset_zenith","#FF48557D",
+                "day_brightness",1.04,"twilight_brightness",.97,"day_haze",.16,"sun_halo",.16,
+                "sun_size",1.08,"sun_tint","#FFFFF1DF","horizon_softness",.48,"glow_intensity",.25,
+                "stars","CUSTOM","fog",true,"cycle_fog",true,"fog_color","#FFFFFFFF","fog_blend",.1,"fog_density",1.04);
+        preset("Dynamic / NexVisuals","A continuous blue day, soft dawn, rose-orange dusk and subtle violet night atmosphere.",
+                "dynamic_cycle",true,"day_sky","#FF60A7E3","day_horizon","#FFC4E2F0","day_zenith","#FF3172BB",
+                "morning_sky","#FFC09DB8","morning_horizon","#FFFFD4AA","morning_zenith","#FF677CAC",
+                "sunset_sky","#FFAE678C","sunset_horizon","#FFFFA06F","sunset_zenith","#FF4C426F",
+                "night_sky","#FF171530","night_horizon","#FF34334F","night_zenith","#FF070A1C",
+                "day_brightness",1.03,"twilight_brightness",.96,"day_haze",.2,"sun_halo",.2,
+                "sun_size",1.1,"sun_tint","#FFFFEFDB","moon_tint","#FFDCE6FF","horizon_softness",.48,"glow_intensity",.32,
+                "stars","CUSTOM","star_amount",2200,"star_size",1.1,"nebula",true,"nebula_intensity",.25,
+                "aurora",true,"aurora_intensity",.1,"aurora_color","#FF76BABD","shooting_stars",true,
+                "fog",true,"cycle_fog",true,"fog_color","#FFFFFFFF","fog_blend",.13,"fog_density",1.06);
     }
     private BooleanSetting bool(String id,String name,boolean value) { return add(new BooleanSetting(id,name,"Cosmetic sky layer; toggles independently.",value)); }
     private DoubleSetting number(String id,String name,double value,double min,double max) { return add(new DoubleSetting(id,name,"Changes only sky appearance.",value,min,max)); }
@@ -100,12 +129,21 @@ public final class SkyboxModule extends VisualModule {
     public void extract(ClientLevel level,float partial,Camera camera,SkyRenderState state) {
         if(!eligible(level,camera)) { frame=null; return; }
         var weights=SkyMath.weights(state.sunAngle,dayNight.get());
-        frame=new Frame(blend(daySky,sunsetSky,nightSky,weights),blend(dayHorizon,sunsetHorizon,nightHorizon,weights),
-                blend(dayZenith,sunsetZenith,nightZenith,weights),weights.night(),weights.sunset(),state.rainBrightness,
+        var cycle=SkyMath.cycle(state.sunAngle,dayNight.get());
+        frame=new Frame(blend(daySky,morningSky,sunsetSky,nightSky,weights,cycle),blend(dayHorizon,morningHorizon,sunsetHorizon,nightHorizon,weights,cycle),
+                blend(dayZenith,morningZenith,sunsetZenith,nightZenith,weights,cycle),weights.day(),weights.night(),weights.sunset(),state.sunAngle,state.rainBrightness,
                 (float)(Math.clamp(state.starBrightness*2,0,1)*state.rainBrightness),((double)(level.getGameTime()%720_000)+partial)/20.0);
     }
-    private int blend(ColorSetting day,ColorSetting sunset,ColorSetting night,SkyMath.Weights weights) {
-        return SkyMath.grade(SkyMath.blend(day.get(),sunset.get(),night.get(),weights),brightness.get(),saturation.get(),tint.get());
+    private int blend(ColorSetting day,ColorSetting morning,ColorSetting sunset,ColorSetting night,SkyMath.Weights weights,SkyMath.Cycle cycle) {
+        int color=dynamicCycle.get()?SkyMath.blendCycle(day.get(),morning.get(),sunset.get(),night.get(),cycle):SkyMath.blend(day.get(),sunset.get(),night.get(),weights);
+        double exposure=dynamicCycle.get()?SkyMath.cycleBrightness(cycle,dayBrightness.get(),twilightBrightness.get(),nightBrightness.get()):1;
+        return SkyMath.grade(color,brightness.get()*exposure,saturation.get(),tint.get());
+    }
+    public int currentFogColor(Camera camera,float partial) {
+        if(!cycleFog.get()) return fogColor.get();
+        double angle=Math.toRadians(camera.attributeProbe().getValue(EnvironmentAttributes.SUN_ANGLE,partial));
+        int horizon=blend(dayHorizon,morningHorizon,sunsetHorizon,nightHorizon,SkyMath.weights(angle,dayNight.get()),SkyMath.cycle(angle,dayNight.get()));
+        return (SkyMath.grade(horizon,1,1,fogColor.get())&0xFFFFFF)|(fogColor.get()&0xFF000000);
     }
     public Frame frame() { return frame; }
     public boolean active() { return enabled() && failure.isEmpty() && frame!=null && RenderCompatibility.blockReason().isEmpty(); }

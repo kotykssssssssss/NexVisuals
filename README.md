@@ -36,12 +36,13 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.3.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.4.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 ## Что доступно
 
-- Custom Skybox: собственный процедурный купол, day/sunset/night gradients, отдельное поле звёзд с Pixel/Diamond/Soft и twinkle, размер/цвет/alpha солнца и луны, aurora, nebula, meteors и horizon glow. Семь готовых стилей; fog color и дополнительная плотность включаются отдельно.
-- Lightweight Shaders: один проход изображения мира перед HUD — brightness/contrast/saturation/gamma/temperature/tint, vignette, небольшой glow, chromatic aberration, grain, color/night filters и дополнительная damage flash. Семь стилей; активный Iris shader pack приостанавливает оба новых renderer.
+- Custom Skybox: процедурный купол, звёзды, sun/moon, aurora/nebula/meteors; девять стилей. **Enhanced Day** и **Dynamic / NexVisuals** добавляют отдельную утреннюю палитру, плавный полный цикл суток, дневную дымку и мягкий солнечный ореол. Прежние ночные presets сохранены.
+- Live Background: шесть процедурных GPU-обоев **NexVisuals / Aurora / Flow / Nebula / Waves / Minimal** для главного меню и редактора, опционально pause menu. Три цвета с alpha, скорость, движение, мягкость форм, яркость, насыщенность, intensity, motes и dim; режим Vanilla. Работает вместе с Console Menu.
+- Lightweight Shaders: grading, exposure/highlights, vignette, chromatic aberration, grain, color/night filters и damage flash; восемь стилей. **Dreamy** и обновлённый **Cinematic** используют широкое выделение ярких участков и мягкую периферию. Compact glow остаётся; Wide добавляет маленький quarter-resolution pass. Активный Iris shader pack приостанавливает sky/post renderer.
 - Console Menu: главное меню в духе классических консольных изданий, с родной панорамой, логотипом и шрифтом Minecraft. Classic/Sunset/Moonlight/Still, цвета, положение панели, скорость/направление движения и оформление загрузки мира.
 - Hit Effects: Burst, Sparks, Rings, Slash, Impact; собственные процедурные masks, цвета/alpha, motion, scale/fade/easing и marker. Hit Sounds: шесть вариантов на базе ссылок на vanilla sounds.
 - Viewmodel: position/rotation, общий и per-axis scale, две руки, Copy/Mirror и шесть presets. Item Swing: семь стилей, duration/easing/amplitude и Custom transforms.
@@ -61,11 +62,13 @@ sh gradlew runClient
 
 Для нового главного меню нажмите **«Меню NexVisuals»** в левом верхнем углу vanilla title screen. Кнопка **«Стиль меню...»** открывает настройки Console Menu, **Vanilla** возвращает обычное меню. Модуль также доступен через Interface → Console Menu. Изменения компоновки видны после возврата из настроек; цвета и движение сохраняются в общем config и профилях. HUD Editor доступен только при загруженном мире.
 
+Для живых обоев: **Interface → Live Background → Enabled → Waves → Apply**. Пресет Waves вдохновлён спокойными изогнутыми полосами референса; другие presets меняют саму форму фона. Настройки видны сразу за редактором. Console Menu продолжает управлять панелью/кнопками, Live Background — только обоями. **Background → Vanilla** либо выключение Live Background возвращает прежний фон, сохраняя цвета. Кнопка Vanilla в Console Menu отключает его компоновку отдельно. Reduced motion из Console Menu останавливает и живой фон. Preview/F4 намеренно показывает мир, скрывая и редактор, и обои.
+
 Все модули изначально выключены. Настройки применяются в памяти сразу, записываются при закрытии экрана и штатном завершении клиента. Цвета используют формат `#AARRGGBB`: первые две цифры задают непрозрачность. Кнопка `R` сбрасывает одну настройку, `Reset settings` — настройки выбранного модуля. Числовыми слайдерами можно управлять клавишами. `Ctrl+F` переводит фокус в поиск; `Page Up`/`Page Down` прокручивают настройки.
 
 Некорректный текст в редакторе выделяется красным: последнее корректное значение остаётся действующим. Встроенные module presets выбираются кнопкой со стрелкой и применяются через `Apply`; затем можно менять любые параметры. В Profiles кнопка `Apply style` применяет общий стиль Clean/Aurora/Cinematic, заменяя активную конфигурацию; перед этим можно сохранить свою. Для цветов есть быстрые swatches. В General настраивается opacity меню. Панель настроек не является финальным дизайном.
 
-Для нового неба: **World → Custom Skybox → Cyber / Purple Nebula → Apply → Enabled**. Декоративные ночные слои видны вечером/ночью; время мира не подменяется. Разделы переключаются через `Section`. **Post Processing → Lightweight Shaders** содержит отдельные эффекты. `Current` показывает фактически совпадающий стиль или `Custom` после ручных изменений. Кнопка **Preview / F4** временно скрывает редактор; **F4 / Esc** возвращает его. В этом режиме ввод остаётся внутри экрана, без атак или изменения скрытых controls. Причина приостановки renderer отображается над пресетами и в tooltip.
+Для нового неба: **World → Custom Skybox → Dynamic / NexVisuals или Enhanced Day → Apply → Enabled**. Cyber / Purple Nebula и остальные старые стили остаются доступны. Декоративные ночные слои видны вечером/ночью; время мира не подменяется. В `Section → Dynamic cycle` можно редактировать morning palette, phase brightness, haze, sun halo и cycle fog. **Post Processing → Lightweight Shaders → Dreamy** демонстрирует новые эффекты. `Current` показывает совпадающий стиль или `Custom` после правки. **Preview / F4** скрывает редактор; **F4 / Esc** возвращает его. Ввод остаётся внутри экрана, без атак или изменения скрытых controls. Причина приостановки renderer отображается над пресетами и в tooltip.
 
 HUD Editor открывается кнопкой в меню: drag для позиции, Shift для snap, стрелки для точной правки, right-click для enabled, `H` для скрытия нижней панели. Профили находятся в `config/nexvisuals/profiles/`, основной config — `config/nexvisuals.json`.
 
@@ -84,7 +87,7 @@ Hit Effects и Hit Sounds показывают **локальную попытк
 
 `build` запускает core tests, headless `clientTest`, проверку bytecode-контрактов Mixins и состава production JAR. Ни один тест не открывает окно Minecraft. Отдельно: `gradlew clientTest`, `gradlew verifyModJar`, `git diff --check`.
 
-GLSL проверяется отдельно командой `tools/validate_shaders.ps1 -Validator /path/to/glslang.exe -MinecraftJar /path/to/1.21.11/minecraft-client.jar`: compile/link трёх программ с настоящими vanilla imports и размеры uniform blocks. Скрипт ничего не скачивает и не открывает игру. Процедура и ограничения проверки описаны в [validation](docs/validation.md).
+GLSL проверяется отдельно командой `tools/validate_shaders.ps1 -Validator /path/to/glslang.exe -MinecraftJar /path/to/1.21.11/minecraft-client.jar`: compile/link пяти программ с настоящими vanilla imports и размеры uniform blocks. Скрипт ничего не скачивает и не открывает игру. Процедура и ограничения проверки описаны в [validation](docs/validation.md).
 
 Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Wrapper JAR — официальный проверенный служебный бинарник; PNG masks — исходные ресурсы мода. Их происхождение описано в [ASSETS.md](ASSETS.md). Решение о лицензии основного кода и публикации остаётся владельцу проекта. Codex не выполняет commit/push/tag/release.
 

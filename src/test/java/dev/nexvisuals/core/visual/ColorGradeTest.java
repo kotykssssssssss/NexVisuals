@@ -24,4 +24,21 @@ class ColorGradeTest {
         assertTrue(warm[0]>warm[2]); assertTrue(cold[0]<cold[2]);
         assertEquals(warm[0],cold[2],.000001);
     }
+    @Test void exposureUsesStopsWhileHighlightsOnlyLiftTheBrightRange() {
+        double[] exposed=ColorGrade.apply(.2,.3,.4,new ColorGrade.Parameters(1,1,1,1,0,0,.5,0));
+        assertArrayEquals(new double[]{.2*Math.sqrt(2),.3*Math.sqrt(2),.4*Math.sqrt(2)},exposed,.000001);
+        var highlights=new ColorGrade.Parameters(1,1,1,1,0,0,0,.2);
+        assertArrayEquals(new double[]{.2,.3,.4},ColorGrade.apply(.2,.3,.4,highlights),.000001);
+        double[] lifted=ColorGrade.apply(.8,.8,.8,highlights);
+        assertTrue(lifted[0]>.8 && lifted[0]<1);
+        assertEquals(lifted[0],lifted[1]); assertEquals(lifted[0],lifted[2]);
+    }
+    @Test void newTonalControlsKeepBlackAndClampBrightOutputsAtAllowedExtremes() {
+        for (double exposure : new double[]{-.65,.65}) {
+            var parameters=new ColorGrade.Parameters(1.4,1.5,1.6,.8,1,1,exposure,.3);
+            assertArrayEquals(new double[3],ColorGrade.apply(0,0,0,parameters));
+            for (double channel : ColorGrade.apply(.2,.8,1,parameters))
+                assertTrue(Double.isFinite(channel) && channel>=0 && channel<=1);
+        }
+    }
 }

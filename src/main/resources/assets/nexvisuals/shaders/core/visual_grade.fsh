@@ -1,5 +1,6 @@
 #version 330
 uniform sampler2D SceneSampler;
+uniform sampler2D GlowSampler;
 layout(std140) uniform VisualConfig {
     vec4 Grade;
     vec4 Balance;
@@ -10,12 +11,15 @@ layout(std140) uniform VisualConfig {
     vec4 DamageColor;
     vec4 VignetteColor;
     vec4 Viewport;
+    vec4 Lens;
+    vec4 Tonal;
 };
 in vec2 texCoord;
 out vec4 fragColor;
 vec3 bright(vec2 uv) {
     vec3 c=texture(SceneSampler,uv).rgb;
-    return c*max(0.0,max(c.r,max(c.g,c.b))-Optics.w)/max(.05,1.0-Optics.w);
+    float luminance=dot(c,vec3(.2126,.7152,.0722));
+    return c*smoothstep(Optics.w,min(.999,Optics.w+.16),luminance);
 }
 void main() {
     vec4 source=texture(SceneSampler,texCoord);
@@ -25,12 +29,29 @@ void main() {
         color.r=texture(SceneSampler,texCoord+offset).r;
         color.b=texture(SceneSampler,texCoord-offset).b;
     }
+    float radial=length((texCoord-.5)*2.0)/1.41421356;
+    if(Lens.x>0.0 && radial>.35) {
+        vec2 pixel=vec2(Lens.y)/Viewport.xy;
+        vec3 soft=(color+texture(SceneSampler,texCoord+vec2(pixel.x,0)).rgb+texture(SceneSampler,texCoord-vec2(pixel.x,0)).rgb
+                  +texture(SceneSampler,texCoord+vec2(0,pixel.y)).rgb+texture(SceneSampler,texCoord-vec2(0,pixel.y)).rgb)*.2;
+        color=mix(color,soft,smoothstep(.35,.95,radial)*Lens.x);
+    }
     if(Optics.y>0.0) {
         vec2 pixel=vec2(Optics.z)/Viewport.xy;
-        vec3 glow=bright(texCoord+vec2(pixel.x,0))+bright(texCoord-vec2(pixel.x,0))
-                 +bright(texCoord+vec2(0,pixel.y))+bright(texCoord-vec2(0,pixel.y));
-        color+=glow*(Optics.y*.25);
+        vec3 glow;
+        if(Lens.z>.5) {
+            // The small prefiltered target makes this a soft reconstruction, not separated full-res copies.
+            glow=texture(GlowSampler,texCoord).rgb*.25;
+            glow+=(texture(GlowSampler,texCoord+vec2(pixel.x,0)).rgb+texture(GlowSampler,texCoord-vec2(pixel.x,0)).rgb
+                  +texture(GlowSampler,texCoord+vec2(0,pixel.y)).rgb+texture(GlowSampler,texCoord-vec2(0,pixel.y)).rgb)*.125;
+            glow+=(texture(GlowSampler,texCoord+pixel).rgb+texture(GlowSampler,texCoord-pixel).rgb
+                  +texture(GlowSampler,texCoord+vec2(pixel.x,-pixel.y)).rgb+texture(GlowSampler,texCoord+vec2(-pixel.x,pixel.y)).rgb)*.0625;
+        } else glow=(bright(texCoord+vec2(pixel.x,0))+bright(texCoord-vec2(pixel.x,0))
+                    +bright(texCoord+vec2(0,pixel.y))+bright(texCoord-vec2(0,pixel.y)))*.25;
+        color+=glow*Optics.y;
     }
+    float sceneLuma=dot(color,vec3(.2126,.7152,.0722));
+    color*=exp2(Tonal.x)*(1.0+Tonal.y*smoothstep(.55,.95,sceneLuma));
     float luma=dot(color,vec3(.2126,.7152,.0722));
     color=mix(vec3(luma),color,Grade.z)*Grade.x;
     color*=vec3(1.0+Balance.x*.12+Balance.y*.06,1.0-Balance.y*.10,1.0-Balance.x*.12+Balance.y*.06);
@@ -41,10 +62,13 @@ void main() {
     color=mix(color,color*FilterColor.rgb,FilterColor.a);
     color=mix(color,color*NightColor.rgb,NightColor.a);
     if(Effects.w>0.0) {
-        float grain=fract(sin(dot(gl_FragCoord.xy+floor(Balance.w*24.0),vec2(12.9898,78.233)))*43758.5453)-.5;
-        color*=1.0+grain*Effects.w*2.0;
+        vec2 cell=floor(gl_FragCoord.xy/Tonal.z)+vec2(floor(Balance.w*24.0)*13.0);
+        vec3 hash=fract(vec3(cell.xyx)*.1031); hash+=dot(hash,hash.yzx+33.33);
+        float grain=fract((hash.x+hash.y)*hash.z)-.5;
+        float level=clamp(dot(color,vec3(.2126,.7152,.0722)),0.0,1.0);
+        color*=1.0+grain*Effects.w*2.0*(.25+3.0*level*(1.0-level));
     }
-    float edge=smoothstep(Effects.y,Effects.y+Effects.z,length((texCoord-.5)*2.0)/1.41421356);
+    float edge=smoothstep(Effects.y,Effects.y+Effects.z,radial);
     color=mix(color,VignetteColor.rgb,edge*Effects.x*VignetteColor.a);
     color=mix(color,DamageColor.rgb,DamageColor.a);
     fragColor=vec4(mix(source.rgb,clamp(color,0.0,1.0),Balance.z),source.a);

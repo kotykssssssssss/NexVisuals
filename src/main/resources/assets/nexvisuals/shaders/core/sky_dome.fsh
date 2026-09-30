@@ -10,6 +10,8 @@ layout(std140) uniform SkyConfig {
     vec4 AuroraColor;
     vec4 Details;
     vec4 GlowColor;
+    vec4 DayAtmosphere;
+    vec4 SunColor;
 };
 in vec3 skyDirection;
 out vec4 fragColor;
@@ -29,6 +31,16 @@ void main() {
     vec3 gradient=mix(HorizonColor.rgb,SkyColor.rgb,smoothstep(-softness*.2,softness,height));
     gradient=mix(gradient,ZenithColor.rgb,smoothstep(.2,1.0,height));
     vec3 color=mix(SkyColor.rgb,gradient,Gradient.x);
+    if(DayAtmosphere.x>0.0) {
+        float haze=exp(-pow(height/max(.15,softness*.75),2.0))*DayAtmosphere.x;
+        color=mix(color,HorizonColor.rgb,haze);
+    }
+    if(DayAtmosphere.y>0.0) {
+        vec3 sun=vec3(-sin(DayAtmosphere.z),cos(DayAtmosphere.z),0.0);
+        float facing=max(0.0,dot(d,sun));
+        float halo=pow(facing,120.0)+pow(facing,12.0)*.15;
+        color+=SunColor.rgb*SunColor.a*halo*DayAtmosphere.y*smoothstep(-.08,.15,sun.y)*Atmosphere.y;
+    }
     float night=Atmosphere.x, rain=Atmosphere.y, time=Gradient.w*Details.z;
     float visible=smoothstep(-.02,.14,d.y)*night*rain;
     if(Atmosphere.z>0.0) {

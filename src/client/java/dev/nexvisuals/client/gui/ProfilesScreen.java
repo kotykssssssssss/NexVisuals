@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 /** Explicit local snapshot operations; no profile files are read during rendering. */
-final class ProfilesScreen extends Screen {
+public final class ProfilesScreen extends Screen {
     private final Screen parent;
     private final ProfileManager profiles;
     private final GlobalSettings globals;
@@ -144,7 +144,9 @@ final class ProfilesScreen extends Screen {
     @Override public void tick() { if (rebuild) { rebuild = false; rebuildWidgets(); } }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        Draw.rect(graphics, 0, 0, width, height, 0xC00A0E18);
+        var mod=dev.nexvisuals.client.NexVisualsClient.instance();
+        boolean live=mod!=null && mod.liveBackground().render(this,graphics);
+        Draw.rect(graphics, 0, 0, width, height, live?0x280A0E18:0xC00A0E18);
         Draw.roundedRect(graphics, left, top, panelWidth, panelHeight, 8, 0xFF101725);
         Draw.text(graphics, font, "LOCAL PROFILES", left + 12, top + 12, globals.accentColor.get(), false);
         Draw.text(graphics, font, "Save a style. Switch whenever you like.", left + 12, top + 27, 0xFF8796B2, false);

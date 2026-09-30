@@ -65,13 +65,13 @@
 
 ## Skybox и world-image effects
 
-`SkyboxModule` объявляет обычные typed settings / groups / presets, получает immutable `Frame` при vanilla sky extraction. `SkyMath` вычисляет плавные палитры по реальному sun angle; направление/фаза celestial objects не подменяются. `SkyboxRenderer` заменяет только sky disc собственной sphere mesh (32×16 quads), а Custom Stars — отдельным bounded field. `StarField` создаёт детерминированное распределение unit-sphere; GPU geometry меняется только при правке количества/размера. Цвета, day/night weights, twinkle и atmosphere time передаются через UBO. Nebula, aurora и один meteor на интервал — аналитические fragment layers, без сущностей, particles/history или доступа к скрытым объектам. Vanilla clouds/precipitation/sunrise disc сохраняются.
+`SkyboxModule` объявляет typed settings / groups / presets, получает immutable `Frame` при vanilla sky extraction. `SkyMath.weights` сохраняет прежние три палитры; opt-in `SkyMath.cycle` разделяет twilight на morning/sunset по направлению реального sun angle. Четыре веса нормализованы, непрерывны и периодичны; brightness также интерполируется. Старые presets/config не включают этот режим автоматически. Direction/phase celestial objects не подменяются. `SkyboxRenderer` заменяет только sky disc sphere mesh (32×16 quads), а Custom Stars — bounded field. `StarField` создаёт детерминированное распределение unit-sphere; GPU geometry меняется только при правке количества/размера. UBO передаёт цвета/weights/time, дневную haze и sun halo с реальным направлением солнца. Nebula, aurora и один meteor на интервал — аналитические fragment layers, без сущностей, particles/history или скрытой информации. Vanilla clouds/precipitation/sunrise disc сохраняются.
 
 `SkyRendererMixin` — узкие adapters existing sky methods, scale constants X/Z и color modulator sun/moon/stars. У size hooks `require=2` соответствует двум scalar constants каждой vanilla scale. `FogRendererMixin` меняет computed atmospheric color перед UBO upload, чтобы clear color совпадал с fog. Все шесть дистанций делятся на density 1–3, без расширения видимости. Skybox применим только к Overworld air и уступает Minecraft vision/fluid rules; старый Sky Palette остаётся fallback при неактивном новом модуле.
 
-`PostProcessingModule` владеет settings/presets и guard, `PostProcessingRenderer` — одним переиспользуемым color-only `TextureTarget`. После vanilla world/entity post chains, перед HUD/UI: main color копируется в target, fullscreen triangle рисует grading и небольшие эффекты обратно в main color. Depth не копируется/не меняется, readback отсутствует. Resize пересоздаёт только copy target. Цветовые формулы имеют независимый CPU reference `ColorGrade`; его tests не подтверждают фактическое изображение GPU. Draw/shader compile failure закрывает optional resources, пишет одну error и требует OFF/ON для retry.
+`PostProcessingModule` владеет settings/presets и guard, `PostProcessingRenderer` — переиспользуемым color-only `TextureTarget`. После vanilla world/entity post chains, перед HUD/UI: main color копируется в target, fullscreen triangle рисует grading и эффекты обратно. Compact glow выполняется там же. При Wide `glow_extract` сначала выделяет luminance highlights в target размером ceil(width/4) × ceil(height/4), основной pass реконструирует glow девятью weighted linear samples. Small target/ring освобождаются при Compact/OFF; resize меняет только размеры targets. Peripheral softness использует четыре соседних scene samples и плавный radial mask, HUD/UI не затрагивается. Grain — bounded arithmetic hash с 24 Hz time cells. Depth не копируется/не меняется, readback отсутствует. `ColorGrade` — CPU reference с exposure/highlights, его tests не подтверждают изображение GPU. Draw/shader failure закрывает optional resources, пишет одну error и требует OFF/ON для retry.
 
-Pipelines строятся через `RenderPipeline` snippets и не регистрируются как обязательные vanilla shaders: первый draw проверяет `GpuDevice.precompilePipeline().isValid()`. Это позволяет fallback при недоступном custom shader, без принудительного падения всего vanilla resource reload. Native uniform rings: SkyConfig 144 bytes, StarConfig 48 bytes, VisualConfig 144 bytes. Выключение и shutdown освобождают buffers/targets; cached meshes не перестраиваются каждый кадр. При resource reload используется shader cache Minecraft; успешность reload/GPU output проверяется вручную.
+Pipelines строятся через `RenderPipeline` snippets и не регистрируются как обязательные vanilla shaders: draw проверяет cached `GpuDevice.precompilePipeline().isValid()`. Это позволяет fallback при недоступном custom shader, без принудительного падения всего vanilla resource reload. Native uniform rings: SkyConfig 176 bytes, StarConfig 48, VisualConfig 176, HighlightConfig 16, BackgroundConfig 96. GLSL validator отражает и проверяет эти layouts отдельно от Java build. Выключение и shutdown освобождают buffers/targets; cached meshes не перестраиваются каждый кадр. При resource reload используется shader cache Minecraft; успешность reload/GPU output проверяется вручную.
 
 `RenderCompatibility` обнаруживает Iris через Fabric Loader и один раз связывает **публичный** `IrisApi.isShaderPackInUse` с MethodHandle. В кадре нет reflection search. Активный shader pack или недоступный API блокирует оба новых rendering paths с сообщением в generic GUI; settings остаются сохранёнными. Post target освобождается при блокировке. При установленном Iris без pack новые paths допускаются, но практическая совместимость не проверена. Нет управления private shader options или скачивания packs.
 
@@ -91,20 +91,28 @@ Opening Scale/Slide/Fade относится к декоративной рамк
 
 Тема загрузки меняет только background обычного `LevelLoadingScreen.Reason.OTHER`. Progress tracker, chunk map, narration и close/tick принадлежат Minecraft. Начальный resource-loading overlay и порталы не заменяются.
 
+## Live Background
+
+`LiveBackgroundModule` расширяет тот же catalog/settings/groups/presets/config. В нём нет новой GUI-системы. `LiveBackgroundRenderer` использует optional `POST_PROCESSING_SNIPPET` pipeline, 6 vec4 в UBO. Title screen: одна fullscreen triangle прямо в main color target, как native panorama. Editor/Profiles/pause: та же triangle в reused half-width/half-height `TextureTarget`, затем `BlitRenderState` через публичные `GuiGraphics.guiRenderState` / `TextureSetup`, до controls. В Minecraft 1.21.11 HUD извлекается до screen, но рисуется позднее: direct main-target draw в editor оставлял бы HUD поверх обоев. Native queued blit решает порядок без отмены gameplay/HUD hooks; flipped V сохраняет ориентацию framebuffer. Canvas создаётся при первом таком меню/resize, закрывается при title/выходе/OFF. Нет scene copies/readback/CPU meshes. Разные GLSL branches создают ribbons, fields, two-scale noise или gradient; motes — bounded grid hash. Alpha — вклад слоя, фон непрозрачный. Softness математическая, без blur pass.
+
+`PanoramaRendererMixin` в HEAD отменяет весь panorama render вместе с queued overlay только после успешного wallpaper draw. `ConsoleTitleState` пропускает старый tint/pixels, сохраняя panel/widgets. NexVisuals/Profiles вызывают фон до своих overlay/controls; Preview не рисует его. `ScreenMixin` заменяет только опциональный PauseScreen background, сохраняя deferred subtitles; другие screens не затронуты. Настройки Mode: Vanilla и module OFF возвращают existing paths. Console layout и wallpaper включаются независимо.
+
+`MenuClock` обеспечивает монотонное время/FPS independence, speed=0/motion=0/reduced-motion freeze без catch-up. END_CLIENT_TICK закрывает uniform ring вне поддерживаемых menus и при режиме Vanilla; disable/shutdown также закрывают его. GPU failure выдаёт одно сообщение/log и откатывается к ordinary background до OFF/ON. Live не подключается к world shader chain и не блокируется Iris pack guard; это архитектурное разделение, не подтверждение runtime совместимости.
+
 ## Mixins: зачем они нужны
 
 | Адаптер | Узкая ответственность |
 | --- | --- |
 | `ItemInHandRendererMixin` | Трансформация внутри pushed hand matrix; замена только обычного `swingArm` |
 | `GameRendererMixin` | Коэффициенты vanilla bob/hurt, FOV-поправка и optional world-image pass перед HUD |
-| `ScreenMixin` | Цвет/fade обычного in-world backdrop |
+| `ScreenMixin` | Цвет/fade in-world backdrop и opt-in wallpaper только PauseScreen |
 | `ScreenEffectRendererMixin` | Только first-person fire quads: матрица, alpha, видимость |
 | `SkyRendererMixin` | Legacy palette / procedural dome / custom stars и celestial transforms, без замены world renderer |
 | `FogRendererMixin` | Matching clear/fog color и только дополнительная density обычного air fog |
 | `ContainerScreenMixin` | Декорация стандартных контейнеров и наблюдение локального click |
 | `TitleScreenMixin` | Панель перед vanilla widgets и смещение original logo/splash |
 | `TitleButtonMixin` | Skin только зарегистрированных кнопок текущего title screen; без input hooks |
-| `PanoramaRendererMixin` | Два аргумента menu cubemap camera при активной теме, без world camera |
+| `PanoramaRendererMixin` | Цельная замена title panorama на Live Background; иначе два аргумента тематической cubemap camera |
 | `LevelLoadingScreenMixin` | Только фон загрузки обычного мира; progress и portal screens неизменны |
 
 `defaultRequire: 1` не маскирует пропавшие точки инъекции. `MixinContractTest` проверяет target methods, captured descriptors, shadow fields и INVOKE sites по байткоду фактического Minecraft 1.21.11. Это не полноценный запуск Mixin transformer и не проверка совместимости с другими модами.
@@ -121,7 +129,8 @@ Opening Scale/Slide/Fade относится к декоративной рамк
 - Hat: 40 segments, заранее рассчитанная окружность; максимум 80 quads с rim.
 - Container: максимум 32 ghosts и 6 hover remnants; snapshots только на clicks и до 256 slots.
 - Skybox: 512 dome quads, максимум 4000 star quads; field rebuild только на geometry edits. Отключённые atmosphere branches не вычисляют noise. Aurora/nebula скрываются по night/rain; максимум один meteor на интервал 6–40 секунд.
-- Post-processing: одна color copy и один fullscreen pass; максимум 7 scene samples/pixel при одновременном glow/chromatic. Без цепочки blur targets; copy texture требует около `width × height × 4` bytes (примерно 31.6 MiB при 3840×2160), плюс маленький uniform ring. При OFF GPU draws/copy отсутствуют; sky hooks выполняют только быстрые guards.
+- Post-processing: одна full color copy, один основной pass; Compact максимум 11 scene samples/pixel с chromatic/edge softness. Wide добавляет четыре samples на pixel маленького highlight target (1/16 площади), затем основной pass максимум 7 scene + 9 highlight samples. Copy texture около `width × height × 4` bytes (31.6 MiB при 3840×2160); Wide target дополнительно примерно 2 MiB. Нет цепочки полноразмерных blur buffers, глубины/readback. OFF не делает GPU draws/copy; sky hooks выполняют быстрые guards.
+- Live Background: title — одна GPU triangle без extra targets; другие поддерживаемые меню — quarter-area canvas + один native textured GUI quad. Canvas около 7.9 MiB при окне 3840×2160, создаётся только при первом входе/resize. До двух noise octaves только Nebula и bounded grid motes. Никаких particle collections/video assets/per-frame textures или CPU meshes. 96-byte ring и canvas закрываются при выходе/выключении; FPS на конкретном GPU проверяется вручную.
 - Config не читается с диска в render/tick. Никаких сетевых операций модули не выполняют.
 
 ## Добавление модуля

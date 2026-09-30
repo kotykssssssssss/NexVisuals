@@ -3,6 +3,7 @@ package dev.nexvisuals.core.visual;
 /** Pure, bounded sky calculations; time is the legitimate sun angle, never a modified world clock. */
 public final class SkyMath {
     public record Weights(double day, double sunset, double night) { }
+    public record Cycle(double day, double morning, double sunset, double night) { }
     private SkyMath() { }
     public static double smooth(double low, double high, double value) {
         double t = Math.clamp((value-low)/(high-low),0,1);
@@ -23,6 +24,24 @@ public final class SkyMath {
             color |= Math.clamp(component,0,255)<<shift;
         }
         return color;
+    }
+    /** Rising and setting twilight have different palettes, but share continuous elevation weights. */
+    public static Cycle cycle(double sunAngle, double influence) {
+        Weights base = weights(sunAngle, influence);
+        double rising = 1 - smooth(-.12, .12, Math.sin(sunAngle));
+        return new Cycle(base.day(), base.sunset() * rising, base.sunset() * (1-rising), base.night());
+    }
+    public static int blendCycle(int day, int morning, int sunset, int night, Cycle cycle) {
+        int color = 0xFF000000;
+        for (int shift=0; shift<=16; shift+=8) {
+            double channel = ((day>>>shift)&255)*cycle.day() + ((morning>>>shift)&255)*cycle.morning()
+                    + ((sunset>>>shift)&255)*cycle.sunset() + ((night>>>shift)&255)*cycle.night();
+            color |= Math.clamp((int)Math.round(channel), 0, 255)<<shift;
+        }
+        return color;
+    }
+    public static double cycleBrightness(Cycle cycle, double day, double twilight, double night) {
+        return cycle.day()*day + (cycle.morning()+cycle.sunset())*twilight + cycle.night()*night;
     }
     public static int grade(int color, double brightness, double saturation, int tint) {
         double r=(color>>>16)&255, g=(color>>>8)&255, b=color&255;

@@ -307,7 +307,9 @@ public final class NexVisualsScreen extends Screen {
             Draw.text(graphics, font, hint, 14, 14, 0xFFE9EDF7, false);
             return;
         }
-        Draw.rect(graphics, 0, 0, width, height, 0xB80A0E18);
+        var mod=dev.nexvisuals.client.NexVisualsClient.instance();
+        boolean live=mod!=null && mod.liveBackground().render(this,graphics);
+        Draw.rect(graphics, 0, 0, width, height, live?0x280A0E18:0xB80A0E18);
         Draw.roundedRect(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 8, Draw.withAlpha(0xFF101725, globals.panelOpacity.get().floatValue()));
         Draw.border(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 1, Draw.withAlpha(globals.accentColor.get(), .5f));
         Draw.rect(graphics, layout.left() + 10, layout.top() + 12, 3, 18, globals.accentColor.get());

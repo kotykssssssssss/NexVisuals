@@ -71,7 +71,8 @@ public final class ConsoleTitleState {
 
     public void beforeWidgets(GuiGraphics g) {
         updatePositions();
-        ConsoleTheme.backdrop(g,theme,false);
+        var mod=dev.nexvisuals.client.NexVisualsClient.instance();
+        if(mod==null || !mod.liveBackground().usedOn(screen)) ConsoleTheme.backdrop(g,theme,false);
         var panel=layout.panel();
         ConsoleTheme.panel(g,panel.x(),panel.y(),panel.width(),panel.height(),theme);
         var font=Minecraft.getInstance().font;

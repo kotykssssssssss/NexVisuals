@@ -1,4 +1,4 @@
-# Проверка 0.3.0-dev — 30 сентября 2026
+# Проверка 0.4.0-dev — 30 сентября 2026
 
 ## Что проверено автоматически
 
@@ -14,17 +14,17 @@ $env:TMP = $env:TEMP
 
 .\gradlew.bat test clientTest --offline --console=plain '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
 .\gradlew.bat clean build --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
-.\tools\validate_shaders.ps1
+.\tools\validate_shaders.ps1 -Validator '.tools\glslang-16.6.0\bin\glslang.exe'
 git diff --check
 ```
 
 Команды выполняются из `E:\Projects\nexvisuals`. `.tools/tmp` создана локально; переменные окружения не менялись системно. Этот workaround нужен ограниченному окружению Codex: прежняя попытка remap в системном TEMP получала Access denied. На обычном компьютере достаточно `gradlew.bat clean build` с JDK 21.
 
-Итог: **clean build успешен; 89 tests (72 core + 17 client), 0 failures, 0 errors, 0 skipped**. В финальной сборке нет предупреждений Java или Gradle deprecations. `git diff --check` проходит; trailing whitespace отдельно проверен и в новых untracked файлах. `build` включает `test`, `clientTest`, `check`, `remapJar`, `verifyModJar`. Добавлены 12 проверок SkyMath/StarField/ColorGrade и новых реальных module settings/presets/profiles. Все прежние tests сохранены.
+Итог: **финальный clean build успешен за 30 секунд; 99 tests (76 core + 23 client), 0 failures, 0 errors, 0 skipped**. Все 15 Gradle tasks выполнены. Предыдущий clean build тоже проходил; после source review исправлен wallpaper layering в in-world GUI через native queued blit и повторён полный clean build. В финальной сборке нет предупреждений Java или Gradle deprecations. `git diff --check` проходит; trailing whitespace отдельно проверен и в новых untracked файлах. `build` включает `test`, `clientTest`, `check`, `remapJar`, `verifyModJar`. Добавлено 10 focused tests для four-phase cycle, exposure/highlights и реальных sky/live settings/config/profiles/fallback; расширены существующие catalog/round-trip tests. Все прежние tests сохранены.
 
-GLSL: **3 vertex/fragment пары compile/link успешны**, с настоящими `dynamictransforms.glsl`, `projection.glsl`, `fog.glsl` из Minecraft 1.21.11. Reflection glslang подтверждает размеры custom UBO: SkyConfig 144, StarConfig 48, VisualConfig 144 bytes. Это проверка синтаксиса, stage interfaces и layout, **не GPU draw**. Использован официальный Khronos glslang 16.6.0 в ignored `.tools`; release ZIP SHA-256: `82bf434e69b9bb4829de7e2b4bc2c5e7a7861e53d66cf75e5cc70f5f694a8d9b`. Скрипт сам не скачивает инструменты; на другом компьютере передайте `-Validator` и `-MinecraftJar` по фактическим путям.
+GLSL: **5 vertex/fragment пар compile/link успешны**, с настоящими `dynamictransforms.glsl`, `projection.glsl`, `fog.glsl` из Minecraft 1.21.11: sky_dome, custom_stars, visual_grade, live_background, glow_extract. Reflection glslang подтверждает размеры custom UBO: SkyConfig 176, StarConfig 48, VisualConfig 176, BackgroundConfig 96, HighlightConfig 16 bytes. Это проверка синтаксиса, stage interfaces и layout, **не GPU draw**. Использован официальный Khronos glslang 16.6.0 в ignored `.tools`; release ZIP SHA-256: `82bf434e69b9bb4829de7e2b4bc2c5e7a7861e53d66cf75e5cc70f5f694a8d9b`. Скрипт сам не скачивает инструменты; на другом компьютере передайте `-Validator` и `-MinecraftJar` по фактическим путям.
 
-Первые промежуточные проверки не были успешны: Java-компиляция выявила неоднозначный импорт `Math`, GLSL-компилятор — конфликт имени `noise3`, client tests — несуществующий ключ `glow` в Minimal preset. Проверка Mixin также потребовала учесть две size constants (X/Z) в каждом celestial scale. Все эти причины исправлены перед итоговым clean build; shader pairs и полный suite после исправлений проходят.
+Промежуточные проверки этого этапа также выявляли ошибки: compileClientJava остановился из-за package-private ProfilesScreen и пропущенного Std140Builder import; compileClientTestJava — из-за int вместо Double в новом тесте. Исправлены public visibility экрана, import и значение 0.0 в тесте. После исправлений полный suite и GLSL checks проходят. Ошибки прошлого этапа 0.3.0 (Math/noise3/glow ID и две celestial constants) уже были исправлены в исходном baseline.
 
 | Проверка | Покрытие |
 | --- | --- |
@@ -38,34 +38,39 @@ GLSL: **3 vertex/fragment пары compile/link успешны**, с насто�
 | Console Menu motion | Различные траектории, reverse, bounded sway/tilt, yaw wrap, staggered entrance; clock при 20/30/60/144 FPS, pause/zero-speed/stall |
 | Console Menu layout | Demo/normal/development layouts, Left/Center/Right, размеры от 320×240 до 1920×1080 GUI pixels; logo, buttons, footer без overlap |
 | Console Menu persistence | Цвета с alpha, movement/reduced-motion/loading/enabled в config и named profile; старый config остаётся opt-in; invalid enum/default/clamping; reset после Still |
-| Sky and post settings/profiles | 7 различных module presets каждого модуля, полный охват groups, Current/Custom после edits и profile load, ARGB/clamping, schema-1 старый config/defaults, isolated invalid enums/numbers |
-| Sky math / star field | Нормализованные плавные периодические day/night weights, bounded RGB grading, fog только усиливается, детерминированная sphere distribution, cap 4000, independent bounded twinkle |
-| Color grading reference | Identity, grayscale luminance, противоположный warm/cold balance, допустимые extremes и сохранение black; это CPU reference, не изображение GPU |
-| GLSL compile/link | Three GLSL 330 programs с imports фактического 1.21.11 и UBO sizes |
+| Sky/post/live settings и profiles | 9 sky / 8 post / 6 live recipes, group coverage, distinct configs, Current/Custom, config + profile round-trip, ARGB/clamping/defaults; старые ночные presets не включают новые слои |
+| Live fallback и old config | Vanilla mode/цвета независимы от Console layout, сохранение и reload; отсутствие нового module leaves it OFF; invalid style изолирован, shape/motion parameters clamp-ятся |
+| Sky math / star field | Плавные нормализованные периодические 3- и 4-phase weights; sunrise ≠ sunset, exact night palette, brightness bounds; fog только усиливается; deterministic stars, cap 4000, bounded twinkle |
+| Color grading reference | Identity/grayscale/warm-cold, exposure в stops, selective highlights, black при новых extremes и bounded outputs; CPU reference, не GPU image |
+| GLSL compile/link | Five GLSL 330 programs с imports фактического 1.21.11 и UBO sizes |
 | Crosshair geometry | Различные Circle/Chevron masks, ограниченные размеры, открытый центр кольца и отсутствие overlap у alpha fill/outline |
 | Client catalog | Actual registration list, unique settings, all disabled by default, every built-in preset, bundled global recipes, save/load of real modules, Copy/Mirror, old foundation config |
 | Mixin bytecode contracts | Target methods, captured argument types, shadow fields, INVOKE sites и обе celestial size constants в pinned game classes |
-| Production JAR | Exact Minecraft `=1.21.11`, client environment, no server entrypoint, все mixin classes, five particle PNGs и six GLSL sources, no bundled game/test classes |
+| Production JAR | Exact Minecraft `=1.21.11`, client environment, no server entrypoint, все mixin classes, five particle PNGs и ten GLSL sources, no bundled game/test classes |
 
-Отчёты: `build/reports/tests/test/index.html` и `build/reports/tests/clientTest/index.html`. Production/remapped JAR: **`E:\Projects\nexvisuals\build\libs\nexvisuals-0.3.0-dev.jar` — 343788 bytes**. `-sources.jar` не предназначен для установки. Проверено содержимое реального JAR: `version: 0.3.0-dev`, `minecraft: =1.21.11`, Java >=21, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11; других обязательных библиотек нет.
+Отчёты: `build/reports/tests/test/index.html` и `build/reports/tests/clientTest/index.html`. Production/remapped JAR: **`E:\Projects\nexvisuals\build\libs\nexvisuals-0.4.0-dev.jar` — 366625 bytes**. `-sources.jar` не предназначен для установки. Проверено содержимое реального JAR: `version: 0.4.0-dev`, `minecraft: =1.21.11`, Java >=21, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11; других обязательных библиотек нет. Sodium/Iris устанавливаются пользователем отдельно по желанию, не включены в мод.
 
 ## Что не проверено
 
-**Для этого этапа не запускались `runClient`, Minecraft, computer-use или интерактивные GUI-тесты.** Пользователь прямо оставил runtime/visual testing за собой и сообщил, что предыдущие функции работают. Mini HUD, shield, fire и Console Menu в этом обновлении не менялись. Это не подтверждает runtime новых Skybox/Post Processing/Preview.
+**Для этого этапа не запускались `runClient`, Minecraft, computer-use или интерактивные GUI-тесты.** Пользователь подтвердил предыдущий sky/post baseline и отдельно удачный ночной skybox. Здесь сохранены старые night recipes и добавлены dynamic day, live wallpaper и расширенные world-image passes. Console Menu менялся только для совместного background rendering. Feedback предыдущей версии не подтверждает GPU/runtime этой сборки.
 
 Не проверены GPU output, звук, FPS под нагрузкой, actual Mixin transformation в запущенном клиенте, multiplayer prediction, resource reload, Sodium/Iris совместимость. Старые `run/logs` не являются логами новой сборки. Mixin contract tests и успешный remap снижают риск неверных сигнатур, но не заменяют runtime.
 
 ## Ручной checklist
 
-Приоритет после обновления 0.3.0:
+Приоритет после обновления 0.4.0:
 
-- **Skybox:** в Overworld включить World → Custom Skybox → Cyber → Apply. Сравнить днём, на рассвете/закате и ночью; night effects ожидаются ночью. Сравнить все 7 presets; проверить horizon height/softness, palette/brightness/saturation/tint и day/night influence 0/1. Проверить rain, нахождение ниже sea horizon, водоём, lava, Blindness/Darkness и Nether/End. OFF возвращает обычное небо; если Sky Palette включён, он продолжает работать отдельно.
+- **Dynamic/daytime:** World → Custom Skybox → Dynamic / NexVisuals → Apply → Enabled. Оценить morning/noon/sunset/midnight и непрерывные переходы, haze, sun halo и cycle fog. Enhanced Day — более спокойный вариант. В singleplayer test world можно сравнить `/time set 0`, `6000`, `12000`, `18000`; команды зависят от разрешений пользователя. Оценить восход/закат и при обычном течении времени, а не только snapshots. Старые Deep Night/Purple Nebula должны сохранить прежний ночной стиль.
+- **Live Background:** Interface → Live Background → Enabled, Background: Live. Сравнить все 6 presets на vanilla title, Console Menu и прямо за редактором/Profiles; одинаковую ориентацию изображений между direct title и queued canvas. Проверить три цвета/alpha, speed 0, motion 0, intensity/brightness/saturation/softness/motes/dim, Reduced motion из Console Menu. Resize/GUI scale, contrast текста, кнопки/mouse/Tab должны остаться обычными. Optional Pause Menu ON/OFF; wallpaper должен перекрывать HUD, но не controls; после закрытия HUD возвращается обычно. Контейнеры/загрузка не заменяются. Background: Vanilla и module OFF возвращают прежний фон; кнопка Console Vanilla меняет layout отдельно. Проверить отсутствие двойного panorama overlay, вспышки vanilla при открытии и артефактов F3+T.
+- **Новые effects:** Dreamy/Cinematic/Vibrant/Retro — различия halo, edge softness, grain size, highlights и цветов. Wide/Compact/OFF на ярком небе, torch/high-contrast surfaces; без глобальной засветки, ghost copies и чёрных краёв. Exposure/highlights bounds, sharp center/HUD/text. Resize/reload, сравнение FPS и RAM/VRAM, возвращение к миру после длинного пребывания в меню. GPU визуально автоматически не проверялся.
+
+- **Skybox:** сравнить все 9 presets; horizon height/softness, palette/brightness/saturation/tint и day/night influence 0/1. Проверить rain, нахождение ниже sea horizon, водоём, lava, Blindness/Darkness и Nether/End. OFF возвращает обычное небо; если Sky Palette включён, он продолжает работать отдельно.
 - **Stars:** Custom / Vanilla / Disabled; Pixel/Diamond/Soft, amount 0/600/4000, size, brightness, ARGB opacity и twinkle speed/intensity. В Vanilla amount/size/shape намеренно не меняют Minecraft geometry. Повороты камеры не должны двигать звёзды вместе с экраном; сохраняется реальный суточный celestial rotation.
 - **Sun/Moon:** size/opacity/tint, Blood Moon и фазы луны; движение и moon phase должны быть vanilla. Проверить resource pack, FOV, resize и F3+T reload.
 - **Atmosphere/Fog:** отдельно Aurora, Nebula, Shooting stars (подождать выбранный interval), Horizon glow; intensity/colors/motion. Fog OFF/ON, blend/alpha, density 1–3 — плотность только увеличивается. Сравнить FPS с nebula/aurora ON/OFF и полем 4000 stars.
-- **Post Processing:** все 7 presets, отдельные grading/vignette/glow/chromatic/grain/filter/night/damage toggles и overall intensity 0/1. Проверить full-window output без переворота, чёрных краёв, мерцания или изменения HUD/text. OFF возвращает vanilla world image; Screen Tint остаётся отдельным модулем. Проверить воду, повреждение игрока, spectator entity post effect, resize/F3+T, fast/fancy/fabulous graphics.
-- **GUI/config:** Sections, scrolling, Current → Custom после edits, reset всего модуля при открытом разделе, Preview/F4/Esc и отсутствие clicks/typing в скрытые controls. Save named profile, reset/load, restart: enabled/colors/parameters должны восстановиться; старый config не включает новые модули автоматически.
-- **Sodium/Iris:** повторить sky/post проверки с установленной версией Sodium именно для 1.21.11. При установленном Iris без pack проверить новые effects; затем включить pack — оба renderer должны показать `Paused` и уступить pack. Pack OFF — возвращение NexVisuals без crash/black frame. API failure — safe pause. Записать фактические версии и проверить `latest.log`: mixin/shader/draw errors не должны игнорироваться. Ни одна из этих runtime комбинаций автоматически не проверялась.
+- **Post Processing:** все 8 presets, отдельные grading/vignette/glow/chromatic/grain/filter/night/damage toggles и overall intensity 0/1. Проверить full-window output без переворота, чёрных краёв, мерцания или изменения HUD/text. OFF возвращает vanilla world image; Screen Tint остаётся отдельным модулем. Проверить воду, повреждение игрока, spectator entity post effect, resize/F3+T, fast/fancy/fabulous graphics.
+- **GUI/config:** Sections, scrolling, Current → Custom после edits, reset всего модуля при открытом разделе, Preview/F4/Esc: обои скрываются, виден мир, clicks/typing не проходят к gameplay/скрытым controls. Save named profile, reset/load, restart: live enabled/style/colors/motion, sky preset и новые post параметры должны восстановиться; старый config не включает новые модули автоматически.
+- **Sodium/Iris:** повторить sky/post/live проверки с Sodium именно для 1.21.11. Iris без pack: проверить новые effects; с pack: sky/post должны показать `Paused` и уступить pack, меню с Live Background проверяется отдельно. Pack OFF — возвращение NexVisuals без crash/black frame. API failure — safe pause. Записать фактические версии и проверить `latest.log`: mixin/shader/draw errors не должны игнорироваться. Ни одна из этих runtime комбинаций автоматически не проверялась.
 
 Регрессии Console Menu из 0.2.2:
 
@@ -98,9 +103,10 @@ GLSL: **3 vertex/fragment пары compile/link успешны**, с насто�
 
 ## Известные ограничения
 
-- Skybox/Post Processing/Preview визуально не проверены; successful GLSL link и bytecode contracts не гарантируют правильный GPU output или actual Mixin transformation. Совместимость с Sodium/Iris требует ручного подтверждения.
+- Dynamic sky / Live Background / новые post effects визуально не проверены; successful GLSL link и bytecode contracts не гарантируют правильный GPU output или actual Mixin transformation. Совместимость с Sodium/Iris требует ручного подтверждения.
 - Skybox процедурный и применяется только к Overworld air; внешние cubemaps, отдельная замена vanilla clouds/End sky и shaders внутри Iris pack не реализованы. Устанавливая Iris с pack, пользователь выбирает rendering pack вместо новых NexVisuals passes.
-- Glow ограничен четырьмя bright-neighbor samples; это не HDR bloom или полноценный shader pack. Нет shadows/SSR/DOF/volumetrics. Прямая правка сторонних pack options не реализована.
+- Glow остаётся LDR image-space эффектом: Compact — четыре samples, Wide — quarter-resolution luminance extraction и девять reconstruction samples. Нет HDR, depth-aware blur, shadows/SSR/DOF/volumetrics или private shader pack options. Highlight из уже обрезанного vanilla LDR не восстанавливает HDR lighting.
+- Live Background не заменяет все vanilla screens и не поддерживает внешние videos/images; loading/containers остаются прежними. Softness — мягкие формы, а не real-time blur. Разные GUI overlays дают немного разное итоговое dim. Motes approximate; эффект зависит от GPU/разрешения, FPS не измерен.
 - Не проверены title-screen replacements и дополнительные кнопки других модов. Они могут требовать отдельного layout adapter. Realms notices остаются под управлением vanilla.
 - Console Menu не заменяет начальную заставку Mojang при resource loading и не добавляет controller support. Nether/End portal backgrounds сохраняются. Это тема Java Edition, не порт Xbox 360 UI.
 - Generic GUI остаётся рабочим редактором, а не окончательным редизайном по референсам. Не весь текст локализован; интерфейс преимущественно английский.
