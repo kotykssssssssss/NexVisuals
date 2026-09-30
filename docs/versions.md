@@ -13,7 +13,7 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Текущая версия NexVisuals — `0.6.0-dev`: четыре новых HUD elements и расширения color picker, animated crosshair, screen pulses и Hit Effects поверх `0.5.0-dev`. Dynamic/Enhanced Day sky, ночные presets, GPU Live Background и все предыдущие модули сохранены. Стек Minecraft/Fabric не менялся; новых Mixins нет. Новые HUD/icon/widget calls проверены по mapped sources **1.21.11**, включая `Gui.getMobEffectSprite`, `GuiGraphics.renderItem`, `AbstractWidget` и актуальные input events. Fabric HUD API используется через прежний HudDispatcher. Runtime/GPU-проверки оставлены пользователю по его прямому указанию. Описание текущего этапа — в [hud-customization](hud-customization.md), предыдущего — в [new-visuals](new-visuals.md).
+Текущая версия NexVisuals — `0.7.0-dev`: шесть локально предоставленных звуков, приглушение vanilla attack cues, Totem Pop Sounds и Totem Tracker HUD поверх `0.6.0-dev`. Dynamic/Enhanced Day sky, ночные presets, GPU Live Background и все предыдущие модули сохранены. Стек Minecraft/Fabric не менялся. Новый `SoundEngineMixin` умножает только gain подходящих attack instances; существующий `ClientPacketListenerMixin` получил узкую правку local totem volume/pitch. Sites/дескрипторы проверяются по bytecode **1.21.11**. Runtime/audio-проверки оставлены пользователю по его прямому указанию. Описание этапа — в [sound-feedback](sound-feedback.md), предыдущего — в [hud-customization](hud-customization.md).
 
 Проверено 28 сентября 2026 года. Источники:
 

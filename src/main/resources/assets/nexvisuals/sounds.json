@@ -1,0 +1,8 @@
+{
+  "user_hit_cricket": {"sounds": [{"name":"${hit_cricket}", "type":"${audio_type}"}]},
+  "user_hit_2": {"sounds": [{"name":"${hit_2}", "type":"${audio_type}"}]},
+  "user_hit_critical": {"sounds": [{"name":"${hit_critical}", "type":"${audio_type}"}]},
+  "user_hitmarker": {"sounds": [{"name":"${hitmarker}", "type":"${audio_type}"}]},
+  "user_alpha_damage": {"sounds": [{"name":"${alpha_damage}", "type":"${audio_type}"}]},
+  "user_osu": {"sounds": [{"name":"${osu}", "type":"${audio_type}"}]}
+}

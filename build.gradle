@@ -29,11 +29,30 @@ dependencies {
 }
 
 def resourceProperties = [version: project.version.toString(), minecraft_version: project.minecraft_version]
+// Supplied clips stay out of version control. Ordinary builds use installed Minecraft event fallbacks.
+def audioFallbacks = [hit_cricket:'block.chain.hit', hit_2:'block.note_block.bit', hit_critical:'block.amethyst_block.chime',
+                      hitmarker:'ui.button.click', alpha_damage:'block.note_block.harp', osu:'block.note_block.bell']
+def userSoundDirectory = providers.gradleProperty('userSoundResources').map { file(it).canonicalFile }.orNull
+if (userSoundDirectory != null) {
+    if (!userSoundDirectory.toPath().startsWith(projectDir.canonicalFile.toPath()) || userSoundDirectory == projectDir.canonicalFile)
+        throw new GradleException('User sound resources must stay inside NexVisuals')
+    if (!new File(userSoundDirectory, 'nexvisuals/user-audio.json').isFile())
+        throw new GradleException('Prepare the local clips with tools/prepare_user_sounds.py first')
+    audioFallbacks.keySet().each { name ->
+        if (!new File(userSoundDirectory, 'assets/nexvisuals/sounds/user/' + name + '.ogg').isFile())
+            throw new GradleException('Missing prepared user clip: ' + name)
+    }
+    sourceSets.main.resources.srcDir(userSoundDirectory)
+}
+def soundProperties = [audio_type: userSoundDirectory == null ? 'event' : 'file']
+audioFallbacks.each { name, fallback -> soundProperties[name] = userSoundDirectory == null ? 'minecraft:' + fallback : 'nexvisuals:user/' + name }
 processResources {
     inputs.properties resourceProperties
+    inputs.properties soundProperties
     filesMatching('fabric.mod.json') {
         expand resourceProperties
     }
+    filesMatching('assets/nexvisuals/sounds.json') { expand soundProperties }
 }
 
 java {
@@ -91,6 +110,18 @@ tasks.register('verifyModJar') {
                 ['vsh', 'fsh'].each { stage -> assert zip.getEntry('assets/nexvisuals/shaders/core/' + shader + '.' + stage) != null }
             }
             assert !zip.entries().toList().any { it.name.contains('Test.class') || it.name.startsWith('net/minecraft/') }
+            def audio = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('assets/nexvisuals/sounds.json')))
+            assert audio.size() == 6
+            audioFallbacks.keySet().each { name ->
+                def voice = audio['user_' + name].sounds[0]
+                assert voice.type == (userSoundDirectory == null ? 'event' : 'file')
+                if (userSoundDirectory != null) {
+                    assert zip.getEntry('assets/nexvisuals/sounds/user/' + name + '.ogg') != null
+                    assert zip.getEntry('nexvisuals/user-audio.json') != null
+                }
+            }
+            if (userSoundDirectory == null)
+                assert !zip.entries().toList().any { it.name.endsWith('.ogg') || it.name == 'nexvisuals/user-audio.json' } : 'Clean before switching audio build modes'
         }
         logger.lifecycle('Verified production mod: {} ({} bytes), Minecraft 1.21.11', file.absolutePath, file.length())
     }

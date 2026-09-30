@@ -13,7 +13,15 @@ Hit Sounds references six sound events provided by the user's installed Minecraf
 | Metallic | `minecraft:block.chain.hit` |
 | Arcade | `minecraft:block.note_block.bit` |
 
-**No Mojang audio, third-party audio, shader packs or reference-image artwork is distributed inside NexVisuals.** These are event references, not a claim of ownership or a license to redistribute Minecraft's assets. Resource packs may change the sounds heard by the user. Minecraft remains separately required.
+An ordinary `clean build` bundles **no audio files**. These are event references, not a claim of ownership or a license to redistribute Minecraft's assets. Resource packs may change the sounds heard by the user. Totem Pop Sounds also references installed vanilla totem, amethyst chime, bell, harp and bit events. Minecraft remains separately required.
+
+## Optional user-provided audio
+
+For this user's local build, six MP3s were supplied: `cricket-bat-hitting-sound.mp3`, `hitsound_2.mp3`, `critical-hit-sounds-effect.mp3`, `hitmarker_2.mp3`, `minecraft-alpha-damage-sound-effect.mp3`, and `osu-hit-sound.mp3`. Their original authors and redistribution licenses were **not established**. They are not covered by the CC0 dedication above; their filenames do not prove ownership or permission to redistribute.
+
+`tools/prepare_user_sounds.py` reads the originals without modifying them, trims silence, normalizes/clamps gain, applies short edge fades, and converts them to mono OGG Vorbis using an optional local FFmpeg. The converted files and origin/hash manifest stay under ignored `.tools/user-sounds/`, outside tracked assets. `clean build -PuserSoundResources=.tools/user-sounds` explicitly packages these six files into a private local JAR. **The ready 0.7 JAR supplied to this user contains their clips.** An ordinary build keeps the same sound IDs with vanilla event fallbacks and omits the clips/manifest. Public distribution requires separately establishing permissions; no release was made.
+
+FFmpeg and ffprobe are development converters, not Minecraft dependencies and not bundled in the mod. Source MP3s, tool binaries and generated clips are not added to Git. See [conversion/build instructions](docs/sound-feedback.md).
 
 This asset notice does not assign a license to the rest of the repository; the project owner decides its code license before publication.
 

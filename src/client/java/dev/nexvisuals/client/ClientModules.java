@@ -40,6 +40,8 @@ public final class ClientModules {
     public final dev.nexvisuals.client.post.RetroDisplayModule retroDisplay = registry.register(new dev.nexvisuals.client.post.RetroDisplayModule());
     public final HitVisualsModule hits = registry.register(new HitVisualsModule(classicParticles, emitter));
     public final HitSoundsModule sounds = registry.register(new HitSoundsModule());
+    public final TotemSoundsModule totemSounds = registry.register(new TotemSoundsModule());
+    public final dev.nexvisuals.client.hud.TotemTrackerModule totemTracker = registry.register(new dev.nexvisuals.client.hud.TotemTrackerModule());
     public final PlayerTrailsModule trails = registry.register(new PlayerTrailsModule(emitter));
     public final FirefliesModule fireflies = registry.register(new FirefliesModule(emitter));
     public final ElytraTrailsModule elytraTrails = registry.register(new ElytraTrailsModule(emitter));

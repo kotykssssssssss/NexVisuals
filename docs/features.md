@@ -1,4 +1,8 @@
-# Возможности 0.6.0-dev
+# Возможности 0.7.0-dev
+
+## Дополнения 0.7
+
+Hit Sounds расширен шестью предоставленными клипами и настройкой quieter vanilla attacks. **Totem Pop Sounds** выбирает локальный звук настоящего срабатывания тотема, **Totem Tracker HUD** считает такие срабатывания и показывает время после последнего. Оба используют прежние settings/presets/config; Tracker — общий drag/scale HUD Editor. Подробности, отличия приватной аудиосборки и checklist — в [Sound Feedback](sound-feedback.md).
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
 
@@ -63,7 +67,7 @@
 
 Пять новых основных стилей работают при включении одного **Hit Effects**. Настройки: primary/secondary ARGB, общая opacity, размер, intensity/count, lifetime, spread, speed, gravity, fade, luminous appearance, random roll, scale-animation override, easing и accent components. Marker и слабая screen flash включаются отдельно. Glow — яркость и мягкая маска, без bloom pass. Эффекты не видны сквозь стены.
 
-Hit Sounds — отдельный модуль: Soft, Click, Pop, Bell, Metallic, Arcade, volume, pitch, random variation и Preview. Используются ссылки на vanilla sound events, ни одного чужого audio-файла в JAR нет. См. [происхождение assets](../ASSETS.md).
+Hit Sounds — отдельный модуль: прежние Soft, Click, Pop, Bell, Metallic, Arcade плюс Cricket Bat, Hit 2, Critical, Hitmarker, Alpha Damage, Osu. Volume, pitch, random variation, Preview; vanilla attack gain по умолчанию 25% в коротком окне возле собственной атаки. Hurt/death и другие категории звуков не приглушаются. Шесть клипов включены только в локальную сборку с `userSoundResources`; обычный build использует vanilla event fallbacks. Totem Pop Sounds имеет собственные voices/presets, volume/pitch/variation и native underlay. Totem Tracker считает свои event 35, а не количество предметов или чужие срабатывания. См. [настройки и ограничения](sound-feedback.md), [происхождение assets](../ASSETS.md).
 
 Обе функции реагируют на легитимную локальную попытку атаки по видимой сущности. Сервер может отклонить урон; эффект не означает подтверждённый hit. Попадания стрелами и скрытые/удалённые события не детектируются.
 

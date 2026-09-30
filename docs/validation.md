@@ -1,3 +1,48 @@
+# Проверка 0.7.0-dev — 30 сентября 2026
+
+## Автоматически проверено
+
+Minecraft из `gradle.properties` и production `fabric.mod.json` — строго **1.21.11**, не 1.21.1. Стек прежний: Oracle Java 21.0.9, Loader 0.19.5, Fabric API 0.141.6+1.21.11, Loom 1.14.10, official Mojang mappings 1.21.11, Wrapper 9.2.1. Все build caches/TEMP внутри NexVisuals, сборка offline.
+
+Выполнено из `E:\Projects\nexvisuals`:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME = Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP = Join-Path (Get-Location) '.tools\tmp'
+$env:TMP = $env:TEMP
+.\gradlew.bat test clientTest --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\tools\validate_shaders.ps1 -Validator '.tools\glslang-16.6.0\bin\glslang.exe'
+git diff --check
+```
+
+- Обычная **clean build успешна за 1m 2s**, без audio files, с шестью vanilla event fallbacks. Финальная **clean build с пользовательскими clips успешна за 51s**. Обе: 15 tasks executed; remapJar/check/verifyModJar прошли. Java/Gradle warnings в этих build outputs отсутствуют.
+- **134 tests: 95 core + 39 client, 0 failures/errors/skipped** в обеих clean builds. Добавлены 9 focused tests: whitelist/time/distance/world bounds приглушения, activation count/timer/reset, шесть sound definitions/asset hashes, настройки и HUD positions через config/restart/profiles, native/custom underlay rules, legacy voices/new defaults и malformed values/clamping. Прежние catalog/duplicate/settings/config/corruption/profile/HUD/animation/Mixin contract tests сохранены.
+- Дескрипторы/sites нового SoundEngine adapter и local totem sound args проверяются по реальному bytecode Minecraft 1.21.11; это не runtime Mixin transformation с другими модами.
+- Шесть MP3 преобразованы в mono 44100 Hz OGG Vorbis, каждое полностью декодировано FFmpeg и проверено ffprobe. Повторная conversion дала идентичные шесть hashes/manifest. SHA-256 всех original MP3 совпал с manifest: originals не изменены. Converter отдельно прошёл Python syntax check. Converter/FFmpeg/MP3 не являются runtime dependencies.
+- **5 GLSL pairs compile/link + uniform layouts** с actual Minecraft imports прошли повторно: SkyConfig 176, StarConfig 48, VisualConfig 272, BackgroundConfig 96, HighlightConfig 16 bytes. Shader sources/rendering paths на этом этапе не менялись; GPU draw не проверялся.
+- Production JAR отдельно проверен: exact `=1.21.11`, client-only metadata, все declared Mixins, шесть real OGG definitions и SHA-256 assets, новые Totem Sounds/Tracker/SoundEngine/Counter/Window classes, прежние masks/shaders/profiles. В JAR нет MP3, FFmpeg/test classes. `git diff --check` и whitespace новых untracked text files прошли; `.tools` audio/converter игнорируются Git.
+- Ни один compilation/test/shader/build check текущего звукового этапа не завершился ошибкой. Первоначальная попытка download developer converter в ограниченном network environment была недоступна; затем локально скачан и SHA-256-проверен официальный linked Windows FFmpeg build. Системные установки/другие проекты не изменялись.
+
+## Готовый мод
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.7.0-dev.jar` — 519205 bytes.** SHA-256: `BFC5D1984A16088CF35FC66386CF4F3F4FB2370BE36881733A3798B5ADA8EFB6`.
+
+Это **production/remapped JAR с шестью предоставленными клипами**, не `-sources.jar` и не dev artifact. Дополнительный sound pack/decoder не нужен. Требуются Minecraft **1.21.11**, Java 21+, Loader >=0.19.5 и Fabric API >=0.141.6+1.21.11. Sodium/Iris optional и устанавливаются отдельно. Старый NexVisuals JAR заменить; два экземпляра не оставлять. Audio provenance и режим обычной/приватной сборки — в [ASSETS](../ASSETS.md).
+
+## Что осталось проверить пользователю
+
+**Minecraft/runClient/computer-use не запускались; звуки не прослушивались.** Не подтверждены subjective audio levels, runtime sound resolution/Mixin transformation, actual totem server events, HUD output, F3+T, FPS и совместимость Sodium/Iris. Новые Totem Sounds/Tracker по умолчанию OFF. Прежние Hit Sounds enabled/voice/settings не заменяются; quieter option получает default true, gain 0.25.
+
+[Checklist: все шесть clips, attack mix/OFF, реальные local/remote totems, Tracker/editor, profiles/restart, прежние visual systems и optional rendering mods](sound-feedback.md#ручная-проверка). Count Tracker session-only; размещение/options сохраняются. Hit feedback означает попытку атаки, не server-confirmed damage. Очень близкий совпавший чужой attack sound может попасть в окно приглушения: sound instance не содержит owner ID.
+
+Отчёты: `build/reports/tests/test/index.html`, `build/reports/tests/clientTest/index.html`. Commit/push/tag/release не выполнялись.
+
+<details>
+<summary>История 0.6.0-dev и предыдущих этапов: старые JAR/числа не относятся к текущей сборке</summary>
+
 # Проверка 0.6.0-dev — 30 сентября 2026
 
 ## Автоматически проверено
@@ -203,6 +248,8 @@ GLSL: **5 vertex/fragment пар compile/link успешны**, с настоя�
 - Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, recipes для сторонних shader packs, полноценный curve editor и tooltips reskin отложены. Собственные lightweight presets уже реализованы.
 - Other crosshair replacement mods и modded containers, обходящие `AbstractContainerScreen`/`slotClicked`, отдельно не поддержаны/не проверены. Сохранение vanilla attack indicator использует геометрию vanilla reticle именно 1.21.11.
 - Есть только клиентская косметика локального игрока; синхронизации hats/trails другим игрокам нет.
+
+</details>
 
 </details>
 

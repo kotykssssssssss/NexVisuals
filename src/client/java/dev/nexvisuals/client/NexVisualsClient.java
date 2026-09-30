@@ -56,12 +56,16 @@ public final class NexVisualsClient implements ClientModInitializer {
     public dev.nexvisuals.client.post.PostProcessingModule post() { return catalog.post; }
     public ContainerVisualsModule containers() { return catalog.containers; }
     public dev.nexvisuals.client.cosmetic.TotemEchoModule totemEcho() { return catalog.totemEcho; }
+    public HitSoundsModule hitSounds() { return catalog.sounds; }
+    public TotemSoundsModule totemSounds() { return catalog.totemSounds; }
+    public dev.nexvisuals.client.hud.TotemTrackerModule totemTracker() { return catalog.totemTracker; }
     public dev.nexvisuals.client.cosmetic.BlockEffectsModule blockEffects() { return catalog.blockEffects; }
 
     @Override
     public void onInitializeClient() {
         instance = this;
         LocalAttackFeedback.register(catalog.hits::attacked, catalog.sounds::attacked);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.sounds::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.trails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);

@@ -36,21 +36,24 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.6.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.7.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+
+Шесть предоставленных пользователем MP3 подготовлены в локальной ignored-папке `.tools/user-sounds`. Для сборки с этими клипами используйте `clean build -PuserSoundResources=.tools/user-sounds`; обычный `clean build` использует vanilla event fallbacks и не включает чужие аудиофайлы. Готовый JAR текущего этапа собран **с клипами**, отдельный resource pack не нужен. Происхождение файлов и подготовка описаны в [Sound Feedback](docs/sound-feedback.md) и [ASSETS](ASSETS.md).
 
 ## Что доступно
 
+- Обновление 0.7: **шесть пользовательских Hit Sounds**, настраиваемое приглушение vanilla attack cues, отдельные **Totem Pop Sounds** и **Totem Tracker HUD**. Preview, presets, config/profiles и общий HUD Editor; счётчик отслеживает реальные локальные срабатывания. [Настройки и ручная проверка](docs/sound-feedback.md).
 - Обновление 0.6: **Equipment HUD, Item Counter, Active Visuals, Status Effects HUD**, общая **HSV/RGB/alpha-палитра**, анимации существующего прицела, **Low HP / Damage Pulse** в Screen Edge Tint и **Hearts / Pixels** в Hit Effects. Позиции/scale новых HUD используют прежний редактор. Настройки/профили общие, новых Mixins нет. [Описание и checklist 0.6](docs/hud-customization.md).
 - Набор 0.5 сохранён: **Jump / Landing Rings, Footstep Effects, Totem Echo, Block Interaction FX, Cosmetic Orbitals, Weather Lens, Underwater FX, Retro Display**. Первые пять — частицы в мире с нормальной глубиной; последние три — GPU-pattern/refraction/pixel effects перед HUD. Подробности: [обновление 0.5](docs/new-visuals.md).
 - Custom Skybox: процедурный купол, звёзды, sun/moon, aurora/nebula/meteors; девять стилей. **Enhanced Day** и **Dynamic / NexVisuals** добавляют отдельную утреннюю палитру, плавный полный цикл суток, дневную дымку и мягкий солнечный ореол. Прежние ночные presets сохранены.
 - Live Background: шесть процедурных GPU-обоев **NexVisuals / Aurora / Flow / Nebula / Waves / Minimal** для главного меню и редактора, опционально pause menu. Три цвета с alpha, скорость, движение, мягкость форм, яркость, насыщенность, intensity, motes и dim; режим Vanilla. Работает вместе с Console Menu.
 - Lightweight Shaders: grading, exposure/highlights, vignette, chromatic aberration, grain, color/night filters и damage flash; восемь стилей. **Dreamy** и обновлённый **Cinematic** используют широкое выделение ярких участков и мягкую периферию. Compact glow остаётся; Wide добавляет маленький quarter-resolution pass. Активный Iris shader pack приостанавливает sky/post renderer.
 - Console Menu: главное меню в духе классических консольных изданий, с родной панорамой, логотипом и шрифтом Minecraft. Classic/Sunset/Moonlight/Still, цвета, положение панели, скорость/направление движения и оформление загрузки мира.
-- Hit Effects: Burst, Sparks, Rings, Slash, Impact, Hearts, Pixels; собственные процедурные masks, цвета/alpha, motion, scale/fade/easing и marker. Hit Sounds: шесть вариантов на базе ссылок на vanilla sounds.
+- Hit Effects: Burst, Sparks, Rings, Slash, Impact, Hearts, Pixels; собственные процедурные masks, цвета/alpha, motion, scale/fade/easing и marker. Hit Sounds: шесть прежних vanilla voices и шесть предоставленных клипов, volume/pitch/variation и quieter vanilla attacks.
 - Viewmodel: position/rotation, общий и per-axis scale, две руки, Copy/Mirror и шесть presets. Item Swing: семь стилей, duration/easing/amplitude и Custom transforms.
 - Fire Overlay, отдельные resting/blocking Shield transforms, ограниченные по lifetime Player Trails и локальный Cosmetic Hat.
 - Fireflies: дрейфующие мерцающие огоньки с цветами, плотностью, радиусом и режимом dusk/night. Elytra Trails: парные потоки только при локальном полёте, стили Aurora/Comet/Halo.
-- Custom Crosshair со статичными и анимированными presets, десять собственных HUD элементов и общий framework для восьми vanilla HUD layers с HUD Editor, позициями, scale, backgrounds и outlines.
+- Custom Crosshair со статичными и анимированными presets, одиннадцать собственных HUD элементов и общий framework для восьми vanilla HUD layers с HUD Editor, позициями, scale, backgrounds и outlines.
 - Hotbar / Mini HUD: единый масштаб нижних индикаторов вокруг центра экрана, включая воздух, mount health и item name. Keystrokes показывает плитки с подсветкой фактически нажатых клавиш.
 - Container Visuals: общие panel/slot/hover/click эффекты и quick-move ghosts по однозначным локальным slot changes.
 - Sky Palette для vanilla Overworld sky; безопасная кнопка открытия публичного Iris settings screen при его наличии. Управление shader-pack presets не реализовано.
@@ -84,6 +87,7 @@ Hit Effects и Hit Sounds показывают **локальную попытк
 - [Модули, пресеты и ограничения](docs/features.md).
 - [Архитектура и добавление модулей](docs/architecture.md).
 - [Результаты проверки и ограничения](docs/validation.md).
+- [Hit Sounds, Totem Pop Sounds, Totem Tracker и локальные клипы](docs/sound-feedback.md).
 - [Восемь новых эффектов: исследование, настройки и ручная проверка](docs/new-visuals.md).
 
 `src/main/java/dev/nexvisuals/core` содержит независимую Java-логику; `src/client/java/dev/nexvisuals/client` — интеграцию с игрой. Метаданные Fabric объявляют `environment: client` и точную зависимость `minecraft: =1.21.11`.
