@@ -16,3 +16,5 @@ Hit Sounds references six sound events provided by the user's installed Minecraf
 **No Mojang audio, third-party audio, shader packs or reference-image artwork is distributed inside NexVisuals.** These are event references, not a claim of ownership or a license to redistribute Minecraft's assets. Resource packs may change the sounds heard by the user. Minecraft remains separately required.
 
 This asset notice does not assign a license to the rest of the repository; the project owner decides its code license before publication.
+
+Console Menu reuses the installed Minecraft panorama, logo, font and language resources through Minecraft renderers. Its bevels, panels and drifting pixels are drawn with GUI primitives. No Xbox/Legacy Console textures, audio, logo artwork or reference screenshots are bundled.

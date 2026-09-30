@@ -21,6 +21,7 @@ public final class ConsoleTitleState {
     private final ConsoleLayout layout;
     private final List<Control> controls=new ArrayList<>();
     private final Map<Button,Control> skinned=new IdentityHashMap<>();
+    private final String subtitle=Component.translatable("nexvisuals.menu.subtitle").getString();
     private final long opened=System.nanoTime();
     private record Control(AbstractWidget button, ConsoleLayout.Rect bounds, int row, Transition hover) { }
 
@@ -73,7 +74,6 @@ public final class ConsoleTitleState {
         ConsoleTheme.backdrop(g,theme,false);
         var panel=layout.panel();
         ConsoleTheme.panel(g,panel.x(),panel.y(),panel.width(),panel.height(),theme);
-        String subtitle=Component.translatable("nexvisuals.menu.subtitle").getString();
         var font=Minecraft.getInstance().font;
         Draw.text(g,font,subtitle,layout.centerX()-font.width(subtitle)/2,panel.y()+11,theme.text.get(),true);
     }

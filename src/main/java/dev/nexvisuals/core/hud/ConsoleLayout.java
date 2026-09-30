@@ -7,7 +7,8 @@ public record ConsoleLayout(Rect panel, int logoY, int buttonHeight, int gap, in
 
     public static ConsoleLayout of(int width, int height, Alignment alignment, int primaryRows) {
         if (width < 1 || height < 1 || primaryRows < 1) throw new IllegalArgumentException("Invalid menu layout");
-        int gap = height < 300 ? 3 : 4;
+        // The development title has a fourth primary button. Leave room for the 51px vanilla logo.
+        int gap = height < 250 && primaryRows >= 4 ? 2 : height < 300 ? 3 : 4;
         int button = height < 300 ? 20 : 26;
         int panelWidth = Math.min(232, Math.max(120, width-24));
         int panelHeight = 23 + primaryRows*(button+gap) + 20+gap + 20 + 10;

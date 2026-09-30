@@ -36,10 +36,11 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.2.1-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.2.2-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 ## Что доступно
 
+- Console Menu: главное меню в духе классических консольных изданий, с родной панорамой, логотипом и шрифтом Minecraft. Classic/Sunset/Moonlight/Still, цвета, положение панели, скорость/направление движения и оформление загрузки мира.
 - Hit Effects: Burst, Sparks, Rings, Slash, Impact; собственные процедурные masks, цвета/alpha, motion, scale/fade/easing и marker. Hit Sounds: шесть вариантов на базе ссылок на vanilla sounds.
 - Viewmodel: position/rotation, общий и per-axis scale, две руки, Copy/Mirror и шесть presets. Item Swing: семь стилей, duration/easing/amplitude и Custom transforms.
 - Fire Overlay, отдельные resting/blocking Shield transforms, ограниченные по lifetime Player Trails и локальный Cosmetic Hat.
@@ -54,7 +55,9 @@ sh gradlew runClient
 
 ## Использование
 
-Откройте NexVisuals клавишей **Right Shift**, когда игрок находится в мире. Дополнительная кнопка есть в меню паузы; в главном меню её нет. Привязка меняется через стандартные Minecraft Options → Controls → Key Binds → NexVisuals и хранится Minecraft в `options.txt`.
+Откройте NexVisuals клавишей **Right Shift**, когда игрок находится в мире. Дополнительная кнопка есть в меню паузы. Привязка меняется через стандартные Minecraft Options → Controls → Key Binds → NexVisuals и хранится Minecraft в `options.txt`.
+
+Для нового главного меню нажмите **«Меню NexVisuals»** в левом верхнем углу vanilla title screen. Кнопка **«Стиль меню...»** открывает настройки Console Menu, **Vanilla** возвращает обычное меню. Модуль также доступен через Interface → Console Menu. Изменения компоновки видны после возврата из настроек; цвета и движение сохраняются в общем config и профилях. HUD Editor доступен только при загруженном мире.
 
 Все модули изначально выключены. Настройки применяются в памяти сразу, записываются при закрытии экрана и штатном завершении клиента. Цвета используют формат `#AARRGGBB`: первые две цифры задают непрозрачность. Кнопка `R` сбрасывает одну настройку, `Reset settings` — настройки выбранного модуля. Числовыми слайдерами можно управлять клавишами. `Ctrl+F` переводит фокус в поиск; `Page Up`/`Page Down` прокручивают настройки.
 

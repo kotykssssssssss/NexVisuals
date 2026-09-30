@@ -1,6 +1,23 @@
-# Возможности 0.2.1-dev
+# Возможности 0.2.2-dev
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
+
+## Console Menu: главное меню и загрузка мира
+
+В vanilla title screen нажмите **«Меню NexVisuals»** слева сверху. В оформленном меню есть **«Стиль меню...»** и **Vanilla** для возврата. Либо включите Interface → Console Menu в существующем редакторе. Новый модуль изначально выключен; старые конфиги не включают его автоматически.
+
+- **Classic:** каменные тона, зелёный accent, медленный orbit с лёгким покачиванием.
+- **Sunset:** тёплые янтарные цвета и движение камеры из стороны в сторону.
+- **Moonlight:** сине-серая палитра и спокойное круговое движение.
+- **Still:** Classic без движения фона, появления/hover-анимации кнопок и пульсирующего splash-текста.
+
+Можно независимо задать accent, цвет/alpha панели, цвет текста, tint/alpha панорамы, расположение панели Left/Center/Right. Motion: Still/Orbit/Sway/Drift; доступны speed, amplitude, tilt, starting direction и reverse. Скорость учитывает Minecraft Panorama Scroll Speed; ноль останавливает фон. Button entrance задаётся в миллисекундах, Reduced motion выключает декоративное движение. Drifting pixels — небольшой ограниченный набор фоновых пикселей. `Reset settings` восстанавливает исходные значения.
+
+Сохраняются родные panorama/resource pack, логотип Minecraft/Java Edition, шрифт, localized labels, Singleplayer/Multiplayer/Realms/Options/Quit, language/accessibility, demo restrictions, tooltips и keyboard navigation. Меняется расположение и вид существующих кнопок, а не их действия. Анимация двигает сам widget вместе с его hit area.
+
+**World loading theme** оформляет обычный `LevelLoadingScreen`: панорама, тонировка и декоративные блоки внизу. Реальная карта генерации chunks, progress, narration и момент входа в мир остаются vanilla. Декоративные блоки не изображают процент готовности. Nether/End portal screens и начальный Mojang resource-loading splash не заменяются.
+
+Это собственное оформление в духе консольного Minecraft, без копирования Xbox artwork, звуков или кода. Сторонние title-screen replacements и добавляемые ими кнопки пока не проверены. Настройки остальных экранов/контейнеров остаются в Menu Backdrop/Container Visuals; это не глобальная замена всех GUI.
 
 ## Hit Effects и Sounds
 

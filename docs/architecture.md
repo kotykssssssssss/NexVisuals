@@ -69,6 +69,14 @@
 
 Opening Scale/Slide/Fade относится к декоративной рамке; интерактивные slots неподвижны. Это сознательное ограничение для правильной геометрии мыши. Иконки ghosts исчезают уменьшением; общий безопасный alpha multiplier для произвольных GUI items не добавлялся.
 
+## Console menu
+
+`ConsoleMenuModule` хранит typed settings и четыре module presets, использует общий config/profile flow. `ScreenEvents.AFTER_INIT` связывает текущий `TitleScreen` с `ConsoleTitleState`. Последний сохраняет original vanilla button instances и их actions/active flags/tooltips/narration, меняя bounds и skin. Временное состояние освобождается при удалении экрана или выключении модуля, восстанавливается через обычный init. Общий settings screen можно открыть из title screen; HUD Editor там неактивен без мира.
+
+`ConsoleLayout` рассчитывает panel/logo/button geometry в GUI pixels; `MenuMotion` — углы только существующего menu cubemap. `MenuClock` использует монотонное время и замораживает движение без catch-up при паузе. После долгого отсутствия меню delta ограничена 250 ms. `ConsoleTheme` рисует beveled pixel-панели и максимум 18 фоновых motes обычными `GuiGraphics` primitives. Новый framebuffer, shader pipeline или копия vanilla assets не создаются. Меню остаётся title screen Minecraft, сетевые действия и ограничения аккаунта не подменяются.
+
+Тема загрузки меняет только background обычного `LevelLoadingScreen.Reason.OTHER`. Progress tracker, chunk map, narration и close/tick принадлежат Minecraft. Начальный resource-loading overlay и порталы не заменяются.
+
 ## Mixins: зачем они нужны
 
 | Адаптер | Узкая ответственность |
@@ -79,6 +87,10 @@ Opening Scale/Slide/Fade относится к декоративной рамк
 | `ScreenEffectRendererMixin` | Только first-person fire quads: матрица, alpha, видимость |
 | `SkyRendererMixin` | Цветовые поля extracted `SkyRenderState`, без замены world renderer |
 | `ContainerScreenMixin` | Декорация стандартных контейнеров и наблюдение локального click |
+| `TitleScreenMixin` | Панель перед vanilla widgets и смещение original logo/splash |
+| `TitleButtonMixin` | Skin только зарегистрированных кнопок текущего title screen; без input hooks |
+| `PanoramaRendererMixin` | Два аргумента menu cubemap camera при активной теме, без world camera |
+| `LevelLoadingScreenMixin` | Только фон загрузки обычного мира; progress и portal screens неизменны |
 
 `defaultRequire: 1` не маскирует пропавшие точки инъекции. `MixinContractTest` проверяет target methods, captured descriptors, shadow fields и INVOKE sites по байткоду фактического Minecraft 1.21.11. Это не полноценный запуск Mixin transformer и не проверка совместимости с другими модами.
 
