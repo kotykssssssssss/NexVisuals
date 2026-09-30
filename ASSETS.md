@@ -18,3 +18,5 @@ Hit Sounds references six sound events provided by the user's installed Minecraf
 This asset notice does not assign a license to the rest of the repository; the project owner decides its code license before publication.
 
 Console Menu reuses the installed Minecraft panorama, logo, font and language resources through Minecraft renderers. Its bevels, panels and drifting pixels are drawn with GUI primitives. No Xbox/Legacy Console textures, audio, logo artwork or reference screenshots are bundled.
+
+The `sky_dome`, `custom_stars` and `visual_grade` GLSL programs are source written for NexVisuals. Nebula, aurora, meteors and star shapes are procedural; no external sky cubemaps or shader packs are bundled. Minecraft shader includes and celestial textures are referenced from the user's installed resources, not redistributed here. Their source verification tool (`tools/validate_shaders.ps1`) uses an optional local Khronos glslang executable; the validator binary is not part of the mod or repository.

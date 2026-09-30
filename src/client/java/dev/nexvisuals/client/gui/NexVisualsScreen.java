@@ -16,6 +16,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -40,6 +41,10 @@ public final class NexVisualsScreen extends Screen {
     private KeybindSetting capturing;
     private boolean rebuildRequested;
     private boolean restoreSearchFocus;
+    private boolean worldPreview;
+    private NexButton runtimeInfo;
+    private Supplier<String> runtimeInfoLabel;
+    private String runtimeInfoText;
     private final java.util.Map<String, Integer> presetSelections = new java.util.HashMap<>();
 
     public NexVisualsScreen(Screen parent, ModuleRegistry registry, GlobalSettings globals, Runnable save) {
@@ -62,6 +67,7 @@ public final class NexVisualsScreen extends Screen {
         categoryPane = null;
         modulePane = null;
         settingPane = null;
+        runtimeInfo = null;
         int toolbarX = layout.left() + 8;
         int toolbarY = layout.toolbarY();
         int hudButtonRight = layout.left() + layout.width() - (profiles == null ? 8 : 82);
@@ -107,6 +113,10 @@ public final class NexVisualsScreen extends Screen {
                 }, "Global appearance and interface settings"));
         addRenderableWidget(button(layout.left() + layout.width() - 78, layout.footerY(), 70, 19,
                 () -> "Done", () -> false, this::onClose, "Save your settings and return to Minecraft"));
+        NexButton preview = addRenderableWidget(button(layout.left() + layout.width() - 146, layout.footerY(), 62, 19,
+                () -> "Preview", () -> false, () -> worldPreview = true,
+                "Hide the editor to inspect the world. F4 or Esc returns to settings; gameplay input stays in the screen."));
+        preview.active = minecraft.level != null;
         if (layout.categories() != null) buildCategories();
         if (layout.modules() != null) buildModules();
         if (layout.settings() != null) buildSettings();
@@ -189,6 +199,7 @@ public final class NexVisualsScreen extends Screen {
         VisualModule module = selected;
         String name = state.globalSettings ? "General settings" : module.name();
         List<Setting<?>> settings = state.globalSettings ? globals.settings() : module.settings();
+        List<Setting<?>> allSettings = settings;
         settingPane.decorate(9, 17, (graphics, y) -> Draw.text(graphics, font,
                 font.plainSubstrByWidth(name, settingPane.area.width() - 16), settingPane.area.x() + 8, y, 0xFFE9EDF7, false));
         int x = settingPane.area.x() + 8;
@@ -201,9 +212,9 @@ public final class NexVisualsScreen extends Screen {
         }
         NexButton reset = button(state.globalSettings ? x : x + controlWidth + 6, 0, controlWidth, 20,
                 () -> "Reset settings", () -> false, () -> {
-                    settings.forEach(setting -> { setting.reset(); state.drafts.remove(setting); state.invalidDrafts.remove(setting); });
+                    allSettings.forEach(setting -> { setting.reset(); state.drafts.remove(setting); state.invalidDrafts.remove(setting); });
                     requestRebuild();
-                }, "Restore the settings on this page to their defaults");
+                }, "Restore all settings of the selected module to their defaults");
         addWidget(reset);
         settingPane.add(reset, 27);
         SettingControls factory = new SettingControls(font, globals, state, this::registerControl,
@@ -216,7 +227,15 @@ public final class NexVisualsScreen extends Screen {
             addWidget(shaders); settingPane.add(shaders, y); y += 24;
         }
         if (!state.globalSettings) {
+            if(!module.runtimeStatus().isEmpty()) {
+                runtimeInfoLabel=module::runtimeStatus;
+                runtimeInfoText=runtimeInfoLabel.get();
+                runtimeInfo=button(x,0,settingPane.area.width()-16,20,runtimeInfoLabel,()->false,()->{},runtimeInfoText);
+                runtimeInfo.active=false; addWidget(runtimeInfo); settingPane.add(runtimeInfo,y); y+=24;
+            }
             if (!module.presets().isEmpty()) {
+                settingPane.decorate(y,15,(graphics,rowY)->Draw.text(graphics,font,"Current: "+module.currentPresetName(),x,rowY+3,0xFF8796B2,false));
+                y+=19;
                 int index = presetSelections.getOrDefault(module.id(), 0) % module.presets().size();
                 var preset = module.presets().get(index);
                 NexButton choose = button(x, 0, settingPane.area.width() - 73, 20,
@@ -237,6 +256,16 @@ public final class NexVisualsScreen extends Screen {
                             action.run().run(); state.drafts.clear(); state.invalidDrafts.clear(); requestRebuild();
                         }, action.description());
                 addWidget(command); settingPane.add(command, y); y += 24;
+            }
+            if(!module.groups().isEmpty()) {
+                int section=state.sections.getOrDefault(module.id(),0)%(module.groups().size()+1);
+                String label=section==module.groups().size()?"All settings":module.groups().get(section).name();
+                NexButton chooseSection=button(x,0,settingPane.area.width()-16,20,()->"Section: "+label+" >",()->false,()->{
+                    state.sections.put(module.id(),(section+1)%(module.groups().size()+1));
+                    state.settingScroll=0; requestRebuild();
+                },"Choose a settings section; reset and module presets still affect the whole module.");
+                addWidget(chooseSection); settingPane.add(chooseSection,y); y+=24;
+                if(section<module.groups().size()) settings=module.groups().get(section).settings();
             }
         }
         for (Setting<?> setting : settings) y = factory.add(settingPane, setting, y);
@@ -261,9 +290,23 @@ public final class NexVisualsScreen extends Screen {
             rebuildRequested = false;
             rebuildWidgets();
         }
+        if (runtimeInfo != null) {
+            String current = runtimeInfoLabel.get();
+            if (!current.equals(runtimeInfoText)) {
+                runtimeInfoText = current;
+                runtimeInfo.setTooltip(Tooltip.create(Component.literal(current)));
+            }
+        }
+        if (minecraft.level == null) worldPreview = false;
     }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        if (worldPreview) {
+            String hint = "Preview: F4 / Esc returns to NexVisuals";
+            Draw.roundedRect(graphics, 8, 8, font.width(hint) + 12, 20, 4, 0xAA101725);
+            Draw.text(graphics, font, hint, 14, 14, 0xFFE9EDF7, false);
+            return;
+        }
         Draw.rect(graphics, 0, 0, width, height, 0xB80A0E18);
         Draw.roundedRect(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 8, Draw.withAlpha(0xFF101725, globals.panelOpacity.get().floatValue()));
         Draw.border(graphics, layout.left(), layout.top(), layout.width(), layout.height(), 1, Draw.withAlpha(globals.accentColor.get(), .5f));
@@ -280,7 +323,7 @@ public final class NexVisualsScreen extends Screen {
         if (settingPane != null) settingPane.render(graphics, mouseX, mouseY, delta);
         String status = capturing != null ? "Press a key or mouse button / Esc cancels"
                 : state.invalidDrafts.isEmpty() ? "Live preview / saved on close" : "Red input invalid / last valid value kept";
-        Draw.text(graphics, font, font.plainSubstrByWidth(status, layout.width() - 100),
+        Draw.text(graphics, font, font.plainSubstrByWidth(status, layout.width() - 164),
                 layout.left() + 10, layout.footerY() + 6, capturing == null ? 0xFF8796B2 : globals.accentColor.get(), false);
     }
 
@@ -291,6 +334,7 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if (worldPreview) return true;
         for (ScrollPane pane : new ScrollPane[] { categoryPane, modulePane, settingPane }) {
             if (pane != null && pane.area.contains(mouseX, mouseY)) {
                 pane.scrollBy((int) (-vertical * 28));
@@ -302,6 +346,7 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (worldPreview) return true;
         if (capturing != null) {
             capturing.set(InputConstants.Type.MOUSE.getOrCreate(event.button()).getName());
             capturing = null;
@@ -310,11 +355,27 @@ public final class NexVisualsScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
+    @Override public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        return worldPreview || super.mouseDragged(event, deltaX, deltaY);
+    }
+
+    @Override public boolean charTyped(CharacterEvent event) {
+        return worldPreview || super.charTyped(event);
+    }
+
     @Override public boolean keyPressed(KeyEvent event) {
+        if (worldPreview) {
+            if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_F4) worldPreview = false;
+            return true;
+        }
         if (capturing != null) {
             if (event.key() == GLFW.GLFW_KEY_UNKNOWN) return true;
             if (event.key() != GLFW.GLFW_KEY_ESCAPE) capturing.set(InputConstants.getKey(event).getName());
             capturing = null;
+            return true;
+        }
+        if (event.key() == GLFW.GLFW_KEY_F4 && minecraft.level != null) {
+            worldPreview = true;
             return true;
         }
         if (event.key() == GLFW.GLFW_KEY_F && (event.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0) {

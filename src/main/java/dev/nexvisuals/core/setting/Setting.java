@@ -10,6 +10,7 @@ public abstract class Setting<T> {
     private final String description;
     private T defaultValue;
     private T value;
+    private long revision;
 
     protected Setting(String id, String name, String description) {
         if (id == null || !id.matches("[a-z][a-z0-9_]*")) {
@@ -31,8 +32,12 @@ public abstract class Setting<T> {
     public final String description() { return description; }
     public final T defaultValue() { return defaultValue; }
     public final T get() { return value; }
-    public final void set(T value) { this.value = validate(Objects.requireNonNull(value)); }
-    public final void reset() { value = defaultValue; }
+    public final long revision() { return revision; }
+    public final void set(T value) {
+        T checked = validate(Objects.requireNonNull(value));
+        if (!Objects.equals(this.value, checked)) { this.value = checked; revision++; }
+    }
+    public final void reset() { set(defaultValue); }
 
     protected abstract T validate(T value);
     public abstract JsonElement toJson();

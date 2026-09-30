@@ -6,6 +6,7 @@ import dev.nexvisuals.client.hud.VanillaHudModule;
 import dev.nexvisuals.client.interfacefx.ContainerVisualsModule;
 import dev.nexvisuals.client.module.*;
 import dev.nexvisuals.client.particle.*;
+import dev.nexvisuals.client.sky.SkyboxModule;
 import dev.nexvisuals.core.module.ModuleRegistry;
 
 /** One explicit registration list, with no hook registration or window access during construction. */
@@ -19,6 +20,8 @@ public final class ClientModules {
     public final ConsoleMenuModule consoleMenu = registry.register(new ConsoleMenuModule());
     public final FireOverlayModule fire = registry.register(new FireOverlayModule());
     public final SkyPaletteModule sky = registry.register(new SkyPaletteModule());
+    public final SkyboxModule skybox = registry.register(new SkyboxModule());
+    public final dev.nexvisuals.client.post.PostProcessingModule post = registry.register(new dev.nexvisuals.client.post.PostProcessingModule());
     public final ContainerVisualsModule containers = registry.register(new ContainerVisualsModule());
     public final CosmeticParticlesModule classicParticles = registry.register(new CosmeticParticlesModule());
     public final EffectEmitter emitter = new EffectEmitter();

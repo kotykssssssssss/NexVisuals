@@ -51,6 +51,8 @@ public final class NexVisualsClient implements ClientModInitializer {
     public ShieldModule shield() { return catalog.shield; }
     public FireOverlayModule fire() { return catalog.fire; }
     public SkyPaletteModule sky() { return catalog.sky; }
+    public dev.nexvisuals.client.sky.SkyboxModule skybox() { return catalog.skybox; }
+    public dev.nexvisuals.client.post.PostProcessingModule post() { return catalog.post; }
     public ContainerVisualsModule containers() { return catalog.containers; }
 
     @Override
@@ -102,7 +104,7 @@ public final class NexVisualsClient implements ClientModInitializer {
                         .bounds(6, 6, 98, 20).build());
             }
         });
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> save());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { catalog.skybox.closeRenderer(); catalog.post.closeRenderer(); save(); });
         LOGGER.info("NexVisuals initialized: Minecraft 1.21.11, {} visual modules", modules.all().size());
     }
 

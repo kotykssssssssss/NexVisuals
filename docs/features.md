@@ -1,4 +1,4 @@
-# Возможности 0.2.2-dev
+# Возможности 0.3.0-dev
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
 
@@ -81,13 +81,51 @@ Transfer styles: Slide, Smooth, Arc, Pop, Fade. Полный ghost path рису
 
 Opening Fade/Scale/Slide анимирует декоративную рамку; slots и их hit areas остаются на обычных местах. Полная замена текстур панелей, alpha предметов, closing animation и полностью движущийся container screen отложены. Прозрачность фона вокруг контейнера настраивается отдельным **Menu Backdrop**.
 
-## Sky и shaders
+## Custom Skybox
 
-**Sky Palette**: Vanilla, Night blue, Sunset, Dark, Cosmic + custom sky/horizon color and blend. Меняются два цветовых поля vanilla Overworld sky render state. Никакого изменения времени суток, moon phase, terrain light или fog. Nether/End остаются обычными. Это палитры существующего sky, не полноценные texture/cubemap skyboxes.
+**World → Custom Skybox** — отдельный модуль, рисующий собственный сферический купол и при выборе Custom Stars отдельную геометрию звёзд. Это не просто изменение двух vanilla цветов. Купол содержит плавный трёхцветный gradient, процедурную туманность, ленты северного сияния, редкие метеоры и мягкий glow горизонта. Aurora, Nebula, Shooting stars и Horizon glow включаются независимо. Собственные программы GLSL работают через Minecraft `RenderPipeline`, без прямого OpenGL или стороннего shader pack.
 
-Если установлен Iris, **Sky Palette автоматически не применяется**. В General появляется **Open Iris shader settings**, использующий только публичный `IrisApi.openMainIrisScreenObj`. Он не скачивает packs, не выбирает их и не редактирует private shader options.
+General: gradient/intensity, horizon height/softness, sky brightness/saturation/RGB tint и day/night influence. Последняя настройка смешивает реальные day/sunset/night палитры с day palette, не меняет часы мира. Для Day, Sunset/Sunrise и Night отдельно задаются sky/horizon/zenith RGB. Переход основан на реальном угле солнца с smoothstep. Alpha sky-палитр не используется; alpha атмосферных/небесных tint умножает их интенсивность. Minecraft сохраняет обычные clouds, rain, sunrise disc, солнце/луну и moon phases.
 
-Для изученной ветки [Iris 1.21.11 public API](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/api/java/net/irisshaders/iris/api/v0/IrisApi.java) и [IrisApiConfig](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/api/java/net/irisshaders/iris/api/v0/IrisApiConfig.java) нет общего публичного API применения именованных наборов настроек произвольных shader packs. Поэтому **shader presets и собственный post-processing engine не реализованы**. Наличие кнопки интеграции не является подтверждением runtime-совместимости.
+Stars: Vanilla / Custom / Disabled. Custom поддерживает 0–4000 звёзд, размер, Pixel/Diamond/Soft, RGB/alpha, brightness и отдельный twinkle каждой звезды с speed/intensity. В Vanilla размер/количество/форма остаются Minecraft-owned; доступна общая пульсация, tint, brightness/opacity. Звёзды появляются по обычной ночной видимости и затухают от дождя. Sun & Moon имеют отдельные size, ARGB tint и opacity, сохраняя реальные пути движения. Fog — RGB/alpha blend и density 1–3: значения больше 1 только усиливают обычный атмосферный fog, никогда не увеличивают visibility distance.
+
+| Preset | Вид и состав |
+| --- | --- |
+| Vanilla+ | Более глубокий знакомый gradient, vanilla sun/moon/stars и мягкий горизонт |
+| Deep Night | Тёмно-синий купол, 2600 twinkling stars и сдержанная зелёная aurora |
+| Purple Nebula | Фиолетовая процедурная туманность, крупные мягкие звёзды и лиловый горизонт |
+| Sunset | Тёплый широкий gradient, увеличенное золотое солнце и небольшой тёплый fog blend |
+| Blood Moon | Большая красная луна, crimson nebula и звёзды-ромбы |
+| Cyber | Cyan aurora, magenta nebula, cyan diamonds и редкие meteors |
+| Minimal | 600 pixel stars, сниженная saturation, без twinkle/glow/atmosphere motion |
+
+Настройки применяются в памяти сразу. Preset — исходный набор параметров; редактирование не вызывает его повторного применения. `Current: Custom` появляется при отличии от всех готовых наборов. Разделы General / Day / Sunset / Night / Stars / Sun & Moon / Atmosphere / Fog доступны в существующем редакторе. Reset сбрасывает **весь** модуль даже при выбранном разделе. Preview/F4 скрывает редактор без закрытия и записи промежуточной конфигурации; F4/Esc возвращает настройки.
+
+Skybox работает в Overworld air; Nether/End, water/lava/powder snow, Blindness/Darkness остаются обычными. Это процедурный skybox, без загрузки пользовательских cubemap/texture files. Старый **Sky Palette** сохранён для старых конфигов; активный новый Skybox имеет приоритет. Sky Palette по-прежнему отключает собственный tint при любом установленном Iris.
+
+## Lightweight Shaders / Post Processing
+
+**Post Processing → Lightweight Shaders** — один проход над изображением мира, после vanilla entity post effects и перед HUD/UI. Общая intensity; color grading можно выключать независимо. Параметры: brightness, contrast, saturation, bounded gamma, temperature и green/magenta balance. Это display color curves, без изменения block light. Чёрный остаётся чёрным в color grading.
+
+Независимые эффекты: vignette с intensity/radius/softness/ARGB, небольшой bright-neighbor glow с threshold/radius/intensity, chromatic separation до 3 pixels, multiplicative film grain, color filter, локальный night tint и дополнительная damage flash по обычному `hurtTime`. Glow — четыре соседних bright samples в том же проходе, **не HDR bloom**. Нет depth effects, теней, SSR, DOF, volumetrics или управления чужими shader packs. Дополнительная flash не заменяет vanilla damage information.
+
+| Preset | Настройки |
+| --- | --- |
+| Vanilla+ | Обычные цвета и слабая vignette |
+| Vibrant | Более насыщенные цвета, лёгкий contrast и glow |
+| Cinematic | Приглушённые тёплые цвета, grain и vignette |
+| Cold | Холодный баланс, умеренная saturation и blue night tint |
+| Warm | Золотистый баланс, слабый glow и чуть больше saturation |
+| Night | Более тёмные холодные цвета, усиленный night tint |
+| Retro | Сниженная saturation, grain и небольшое RGB separation |
+
+Оба новых модуля изначально выключены и используют обычные config/profiles schema 1. Отсутствующие новые поля получают defaults; старые ID и global profiles не меняются. Общие Clean/Aurora/Cinematic profiles сбрасывают неуказанные новые модули; сначала сохраните собственный профиль.
+
+### Iris и fallback
+
+Если публичный [`IrisApi.isShaderPackInUse()`](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/api/java/net/irisshaders/iris/api/v0/IrisApi.java) сообщает активный shader pack, Skybox и Lightweight Shaders **приостанавливают GPU hooks**, сохраняя enabled/settings. Причина видна в GUI. Если API не удаётся безопасно проверить, применяется тот же fallback. При установленном Iris без активного pack новые модули могут работать; это требует runtime проверки. Iris не обязателен. General → Open Iris shader settings использует существующий public API, не выбирает и не скачивает packs.
+
+GPU compile/draw failure отключает соответствующий optional pass до OFF/ON и записывает ошибку один раз в `latest.log`. Pipelines компилируются по требованию, не включены в список обязательных vanilla pipelines. Post-processing также приостанавливается при Blindness/Darkness у camera entity. Наличие guard **не подтверждает** практическую совместимость с Sodium/Iris: она оставлена пользователю для проверки.
 
 ## Profiles и UI
 

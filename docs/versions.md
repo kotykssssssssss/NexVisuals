@@ -13,7 +13,7 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Версия самого NexVisuals с Console Menu — `0.2.2-dev` (после `0.2.1-dev` с исправлением Mini HUD). Стек Minecraft/Fabric не менялся. Menu hooks проверены по исходникам и байткоду фактического Minecraft 1.21.11. Новые runtime-проверки оставлены пользователю по его прямому указанию.
+Версия NexVisuals с Custom Skybox / Lightweight Shaders — `0.3.0-dev`, после `0.2.2-dev` с Console Menu. Стек Minecraft/Fabric не менялся. Новые hooks исследованы по фактическим `SkyRenderer`, `SkyRenderState`, `FogRenderer`, `GameRenderer`, `RenderPipeline`, `ShaderManager` и mapped bytecode 1.21.11. Runtime/GPU-проверки оставлены пользователю по его прямому указанию.
 
 Проверено 28 сентября 2026 года. Источники:
 
@@ -23,6 +23,12 @@
 - [Loader для 1.21.11, Fabric Meta](https://meta.fabricmc.net/v2/versions/loader/1.21.11).
 - [Fabric API Maven metadata](https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml), [Loom Maven metadata](https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml).
 - [Документация HUD API 1.21.11](https://docs.fabricmc.net/1.21.11/develop/rendering/hud), [GUI 1.21.11](https://docs.fabricmc.net/1.21.11/develop/rendering/gui/custom-screens), [key mappings 1.21.11](https://docs.fabricmc.net/1.21.11/develop/key-mappings).
+
+Для обновления 30 сентября 2026 изучены [Fabric world rendering 1.21.11](https://docs.fabricmc.net/1.21.11/develop/rendering/world) и [Iris public API, ветка 1.21.11](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/api/java/net/irisshaders/iris/api/v0/IrisApi.java). Fabric world events не предоставляют нужной узкой замены sky pass; используется точечный adapter `SkyRendererMixin`. Собственные shaders следуют UBO/RenderPipeline архитектуре Minecraft 1.21.11. Никаких private Iris shader option APIs или дополнительных обязательных mod dependencies нет.
+
+Также просмотрены [Iris SkyRenderer hooks](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/main/java/net/irisshaders/iris/mixin/MixinSkyRenderer.java) и [GameRenderer hooks](https://github.com/IrisShaders/Iris/blob/1.21.11/common/src/main/java/net/irisshaders/iris/mixin/MixinGameRenderer.java) этой ветки. По этим исходникам явного удаления выбранных vanilla injection sites не обнаружено; это вывод из source review, не запуск совместной Mixin transformation и не подтверждение runtime конкретного Iris JAR.
+
+Для проверки GLSL использован официальный [Khronos glslang 16.6.0](https://github.com/KhronosGroup/glslang/releases/tag/16.6.0), Windows x86_64 release ZIP. Его SHA-256 проверен по digest GitHub release asset: `82bf434e69b9bb4829de7e2b4bc2c5e7a7861e53d66cf75e5cc70f5f694a8d9b`. Команду проверки смотрите в validation; glslang не входит в JAR/зависимости проекта.
 
 В исходном окружении PATH указывал на IBM Semeru JDK 17.0.17, а системный Gradle — на 9.4.0. Они не использовались для сборки. Найденный JDK 21: Oracle `21.0.9+7-LTS-338`; Gradle запускается через Wrapper. Системные установки и другие проекты не изменяются.
 

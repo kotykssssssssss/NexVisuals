@@ -87,6 +87,9 @@ tasks.register('verifyModJar') {
                 assert zip.getEntry('assets/nexvisuals/textures/particle/' + shape + '.png') != null
             }
             ['clean', 'aurora', 'cinematic'].each { preset -> assert zip.getEntry('nexvisuals/presets/' + preset + '.json') != null }
+            ['sky_dome', 'custom_stars', 'visual_grade'].each { shader ->
+                ['vsh', 'fsh'].each { stage -> assert zip.getEntry('assets/nexvisuals/shaders/core/' + shader + '.' + stage) != null }
+            }
             assert !zip.entries().toList().any { it.name.contains('Test.class') || it.name.startsWith('net/minecraft/') }
         }
         logger.lifecycle('Verified production mod: {} ({} bytes), Minecraft 1.21.11', file.absolutePath, file.length())

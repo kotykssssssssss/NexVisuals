@@ -23,6 +23,7 @@ final class GuiState {
     int moduleScroll;
     int settingScroll;
     final Map<Setting<?>, String> drafts = new HashMap<>();
+    final Map<String, Integer> sections = new HashMap<>();
     final Set<Setting<?>> invalidDrafts = new HashSet<>();
 
     GuiState(GlobalSettings globals) {

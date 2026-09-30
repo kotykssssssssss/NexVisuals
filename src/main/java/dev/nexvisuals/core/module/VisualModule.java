@@ -21,6 +21,12 @@ public abstract class VisualModule {
     private boolean enabled;
     private final List<ModulePreset> presets = new ArrayList<>();
     private final List<ModuleAction> actions = new ArrayList<>();
+    private final List<SettingGroup> groups = new ArrayList<>();
+    private long styleRevision = -1;
+    private String styleName = "Custom";
+    public record SettingGroup(String name, List<Setting<?>> settings) {
+        public SettingGroup { settings = List.copyOf(settings); }
+    }
 
     protected VisualModule(String id, String name, String description, Category category) {
         if (id == null || !id.matches("[a-z][a-z0-9_]*")) {
@@ -48,6 +54,32 @@ public abstract class VisualModule {
     public final List<Setting<?>> settings() { return settingsView; }
     public final List<ModulePreset> presets() { return Collections.unmodifiableList(presets); }
     public final List<ModuleAction> actions() { return Collections.unmodifiableList(actions); }
+    public final List<SettingGroup> groups() { return Collections.unmodifiableList(groups); }
+    protected final void group(String name, Setting<?>... members) {
+        for (var setting : members) if (!settings.contains(setting)) throw new IllegalArgumentException("Unknown group setting");
+        groups.add(new SettingGroup(name, List.of(members)));
+    }
+    /** Optional live information, e.g. why a renderer is temporarily paused. */
+    public String runtimeStatus() { return ""; }
+    /** Derived from settings, so edits and profile loads cannot leave a misleading preset label. */
+    public final String currentPresetName() {
+        long revision = 0;
+        for (var setting : settings) revision += setting.revision();
+        if (revision == styleRevision) return styleName;
+        styleRevision = revision;
+        styleName = "Custom";
+        for (var preset : presets) {
+            boolean matches = true;
+            for (var setting : settings) {
+                JsonElement expected = preset.values().get(setting.id());
+                if (preset.values().containsKey(setting.id())) {
+                    if (!setting.toJson().equals(expected)) { matches = false; break; }
+                } else if (!Objects.equals(setting.get(), setting.defaultValue())) { matches = false; break; }
+            }
+            if (matches) { styleName = preset.name(); break; }
+        }
+        return styleName;
+    }
 
     /** Presets are explicit user actions, never side effects of config deserialization. */
     protected final void preset(String name, String description, Object... pairs) {

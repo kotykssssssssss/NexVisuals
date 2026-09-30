@@ -1,4 +1,4 @@
-# Проверка 0.2.2-dev — 30 сентября 2026
+# Проверка 0.3.0-dev — 30 сентября 2026
 
 ## Что проверено автоматически
 
@@ -14,12 +14,17 @@ $env:TMP = $env:TEMP
 
 .\gradlew.bat test clientTest --offline --console=plain '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
 .\gradlew.bat clean build --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\tools\validate_shaders.ps1
 git diff --check
 ```
 
 Команды выполняются из `E:\Projects\nexvisuals`. `.tools/tmp` создана локально; переменные окружения не менялись системно. Этот workaround нужен ограниченному окружению Codex: прежняя попытка remap в системном TEMP получала Access denied. На обычном компьютере достаточно `gradlew.bat clean build` с JDK 21.
 
-Итог: **clean build успешен; 77 tests, 0 failures, 0 errors, 0 skipped**. В финальной сборке нет предупреждений Java или Gradle deprecations. `git diff --check` проходит. `build` включает `test`, `clientTest`, `check`, `remapJar`, `verifyModJar`. Добавлены 12 проверок motion/clock/layout и реального модуля Console Menu; остальные regression tests сохранены.
+Итог: **clean build успешен; 89 tests (72 core + 17 client), 0 failures, 0 errors, 0 skipped**. В финальной сборке нет предупреждений Java или Gradle deprecations. `git diff --check` проходит; trailing whitespace отдельно проверен и в новых untracked файлах. `build` включает `test`, `clientTest`, `check`, `remapJar`, `verifyModJar`. Добавлены 12 проверок SkyMath/StarField/ColorGrade и новых реальных module settings/presets/profiles. Все прежние tests сохранены.
+
+GLSL: **3 vertex/fragment пары compile/link успешны**, с настоящими `dynamictransforms.glsl`, `projection.glsl`, `fog.glsl` из Minecraft 1.21.11. Reflection glslang подтверждает размеры custom UBO: SkyConfig 144, StarConfig 48, VisualConfig 144 bytes. Это проверка синтаксиса, stage interfaces и layout, **не GPU draw**. Использован официальный Khronos glslang 16.6.0 в ignored `.tools`; release ZIP SHA-256: `82bf434e69b9bb4829de7e2b4bc2c5e7a7861e53d66cf75e5cc70f5f694a8d9b`. Скрипт сам не скачивает инструменты; на другом компьютере передайте `-Validator` и `-MinecraftJar` по фактическим путям.
+
+Первые промежуточные проверки не были успешны: Java-компиляция выявила неоднозначный импорт `Math`, GLSL-компилятор — конфликт имени `noise3`, client tests — несуществующий ключ `glow` в Minimal preset. Проверка Mixin также потребовала учесть две size constants (X/Z) в каждом celestial scale. Все эти причины исправлены перед итоговым clean build; shader pairs и полный suite после исправлений проходят.
 
 | Проверка | Покрытие |
 | --- | --- |
@@ -33,22 +38,36 @@ git diff --check
 | Console Menu motion | Различные траектории, reverse, bounded sway/tilt, yaw wrap, staggered entrance; clock при 20/30/60/144 FPS, pause/zero-speed/stall |
 | Console Menu layout | Demo/normal/development layouts, Left/Center/Right, размеры от 320×240 до 1920×1080 GUI pixels; logo, buttons, footer без overlap |
 | Console Menu persistence | Цвета с alpha, movement/reduced-motion/loading/enabled в config и named profile; старый config остаётся opt-in; invalid enum/default/clamping; reset после Still |
+| Sky and post settings/profiles | 7 различных module presets каждого модуля, полный охват groups, Current/Custom после edits и profile load, ARGB/clamping, schema-1 старый config/defaults, isolated invalid enums/numbers |
+| Sky math / star field | Нормализованные плавные периодические day/night weights, bounded RGB grading, fog только усиливается, детерминированная sphere distribution, cap 4000, independent bounded twinkle |
+| Color grading reference | Identity, grayscale luminance, противоположный warm/cold balance, допустимые extremes и сохранение black; это CPU reference, не изображение GPU |
+| GLSL compile/link | Three GLSL 330 programs с imports фактического 1.21.11 и UBO sizes |
 | Crosshair geometry | Различные Circle/Chevron masks, ограниченные размеры, открытый центр кольца и отсутствие overlap у alpha fill/outline |
 | Client catalog | Actual registration list, unique settings, all disabled by default, every built-in preset, bundled global recipes, save/load of real modules, Copy/Mirror, old foundation config |
-| Mixin bytecode contracts | Target methods, captured argument types, shadow fields, INVOKE sites in pinned game classes |
-| Production JAR | Exact Minecraft `=1.21.11`, client environment, no server entrypoint, all mixin classes and five particle PNGs, no bundled game/test classes |
+| Mixin bytecode contracts | Target methods, captured argument types, shadow fields, INVOKE sites и обе celestial size constants в pinned game classes |
+| Production JAR | Exact Minecraft `=1.21.11`, client environment, no server entrypoint, все mixin classes, five particle PNGs и six GLSL sources, no bundled game/test classes |
 
-Отчёты: `build/reports/tests/test/index.html` и `build/reports/tests/clientTest/index.html`. Production/remapped JAR: **`E:\Projects\nexvisuals\build\libs\nexvisuals-0.2.2-dev.jar` — 295066 bytes**. `-sources.jar` не предназначен для установки.
+Отчёты: `build/reports/tests/test/index.html` и `build/reports/tests/clientTest/index.html`. Production/remapped JAR: **`E:\Projects\nexvisuals\build\libs\nexvisuals-0.3.0-dev.jar` — 343788 bytes**. `-sources.jar` не предназначен для установки. Проверено содержимое реального JAR: `version: 0.3.0-dev`, `minecraft: =1.21.11`, Java >=21, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11; других обязательных библиотек нет.
 
 ## Что не проверено
 
-**Для этого этапа не запускались `runClient`, Minecraft, computer-use или интерактивные GUI-тесты.** Пользователь прямо оставил runtime/visual testing за собой и сообщил, что предыдущие функции работают. Mini HUD, shield и fire в этом обновлении не менялись. Это не подтверждает runtime нового Console Menu.
+**Для этого этапа не запускались `runClient`, Minecraft, computer-use или интерактивные GUI-тесты.** Пользователь прямо оставил runtime/visual testing за собой и сообщил, что предыдущие функции работают. Mini HUD, shield, fire и Console Menu в этом обновлении не менялись. Это не подтверждает runtime новых Skybox/Post Processing/Preview.
 
 Не проверены GPU output, звук, FPS под нагрузкой, actual Mixin transformation в запущенном клиенте, multiplayer prediction, resource reload, Sodium/Iris совместимость. Старые `run/logs` не являются логами новой сборки. Mixin contract tests и успешный remap снижают риск неверных сигнатур, но не заменяют runtime.
 
 ## Ручной checklist
 
-Приоритет после обновления 0.2.2:
+Приоритет после обновления 0.3.0:
+
+- **Skybox:** в Overworld включить World → Custom Skybox → Cyber → Apply. Сравнить днём, на рассвете/закате и ночью; night effects ожидаются ночью. Сравнить все 7 presets; проверить horizon height/softness, palette/brightness/saturation/tint и day/night influence 0/1. Проверить rain, нахождение ниже sea horizon, водоём, lava, Blindness/Darkness и Nether/End. OFF возвращает обычное небо; если Sky Palette включён, он продолжает работать отдельно.
+- **Stars:** Custom / Vanilla / Disabled; Pixel/Diamond/Soft, amount 0/600/4000, size, brightness, ARGB opacity и twinkle speed/intensity. В Vanilla amount/size/shape намеренно не меняют Minecraft geometry. Повороты камеры не должны двигать звёзды вместе с экраном; сохраняется реальный суточный celestial rotation.
+- **Sun/Moon:** size/opacity/tint, Blood Moon и фазы луны; движение и moon phase должны быть vanilla. Проверить resource pack, FOV, resize и F3+T reload.
+- **Atmosphere/Fog:** отдельно Aurora, Nebula, Shooting stars (подождать выбранный interval), Horizon glow; intensity/colors/motion. Fog OFF/ON, blend/alpha, density 1–3 — плотность только увеличивается. Сравнить FPS с nebula/aurora ON/OFF и полем 4000 stars.
+- **Post Processing:** все 7 presets, отдельные grading/vignette/glow/chromatic/grain/filter/night/damage toggles и overall intensity 0/1. Проверить full-window output без переворота, чёрных краёв, мерцания или изменения HUD/text. OFF возвращает vanilla world image; Screen Tint остаётся отдельным модулем. Проверить воду, повреждение игрока, spectator entity post effect, resize/F3+T, fast/fancy/fabulous graphics.
+- **GUI/config:** Sections, scrolling, Current → Custom после edits, reset всего модуля при открытом разделе, Preview/F4/Esc и отсутствие clicks/typing в скрытые controls. Save named profile, reset/load, restart: enabled/colors/parameters должны восстановиться; старый config не включает новые модули автоматически.
+- **Sodium/Iris:** повторить sky/post проверки с установленной версией Sodium именно для 1.21.11. При установленном Iris без pack проверить новые effects; затем включить pack — оба renderer должны показать `Paused` и уступить pack. Pack OFF — возвращение NexVisuals без crash/black frame. API failure — safe pause. Записать фактические версии и проверить `latest.log`: mixin/shader/draw errors не должны игнорироваться. Ни одна из этих runtime комбинаций автоматически не проверялась.
+
+Регрессии Console Menu из 0.2.2:
 
 - **Включение/выключение:** «Меню NexVisuals» слева сверху vanilla title screen → новое меню. «Стиль меню...» открывает Console Menu; Done/Esc возвращает к нему. Vanilla возвращает обычное оформление. После restart восстанавливается выбранное состояние.
 - **Стили и движение:** Classic/Sunset/Moonlight/Still, все 4 motion types, speed/zero/reverse/amplitude/tilt, цвета/alpha, Left/Center/Right, Reduced motion, Minecraft Panorama Scroll Speed = 0. Проверить читаемость текста, анимацию входа/hover и сохранение custom values после restart.
@@ -79,12 +98,14 @@ git diff --check
 
 ## Известные ограничения
 
-- Новое Console Menu визуально не проверено; ссылки на supported APIs не являются гарантией отсутствия графических артефактов.
+- Skybox/Post Processing/Preview визуально не проверены; successful GLSL link и bytecode contracts не гарантируют правильный GPU output или actual Mixin transformation. Совместимость с Sodium/Iris требует ручного подтверждения.
+- Skybox процедурный и применяется только к Overworld air; внешние cubemaps, отдельная замена vanilla clouds/End sky и shaders внутри Iris pack не реализованы. Устанавливая Iris с pack, пользователь выбирает rendering pack вместо новых NexVisuals passes.
+- Glow ограничен четырьмя bright-neighbor samples; это не HDR bloom или полноценный shader pack. Нет shadows/SSR/DOF/volumetrics. Прямая правка сторонних pack options не реализована.
 - Не проверены title-screen replacements и дополнительные кнопки других модов. Они могут требовать отдельного layout adapter. Realms notices остаются под управлением vanilla.
 - Console Menu не заменяет начальную заставку Mojang при resource loading и не добавляет controller support. Nether/End portal backgrounds сохраняются. Это тема Java Edition, не порт Xbox 360 UI.
 - Generic GUI остаётся рабочим редактором, а не окончательным редизайном по референсам. Не весь текст локализован; интерфейс преимущественно английский.
 - Vanilla HUD bounds приблизительные. Universal sprite alpha/tint, heart spacing и переписывание стандартных HUD textures отложены.
 - Container animation не перемещает интерактивные slots и не задерживает закрытие. Ghost alpha заменён shrink-out; полная destination animation есть только для однозначного QUICK_MOVE.
-- Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, шейдерные preset recipes, полноценный curve editor и tooltips reskin отложены.
+- Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, recipes для сторонних shader packs, полноценный curve editor и tooltips reskin отложены. Собственные lightweight presets уже реализованы.
 - Other crosshair replacement mods и modded containers, обходящие `AbstractContainerScreen`/`slotClicked`, отдельно не поддержаны/не проверены. Сохранение vanilla attack indicator использует геометрию vanilla reticle именно 1.21.11.
 - Есть только клиентская косметика локального игрока; синхронизации hats/trails другим игрокам нет.

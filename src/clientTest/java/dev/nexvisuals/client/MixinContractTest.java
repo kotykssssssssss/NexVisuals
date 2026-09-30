@@ -41,20 +41,33 @@ class MixinContractTest {
                         assertTrue(target.fields.stream().anyMatch(f->f.name.equals(field.name)&&f.desc.equals(field.desc)), mixin.name+" shadow "+field.name);
                 }
                 for (MethodNode handler : mixin.methods) for (AnnotationNode injection : annotations(handler.visibleAnnotations,handler.invisibleAnnotations)) {
-                    Object methodValue = value(injection,"method"), atValue = value(injection,"at");
-                    if (!(methodValue instanceof List<?> methods) || atValue == null) continue;
+                    Object methodValue = value(injection,"method"), atValue = value(injection,"at"), constantValue=value(injection,"constant");
+                    if (!(methodValue instanceof List<?> methods) || atValue == null && constantValue == null) continue;
                     injectionCount++;
                     for (Object methodObject : methods) {
                         String methodName = methodObject.toString();
                         List<MethodNode> candidates = target.methods.stream().filter(m -> methodName.equals(m.name) || methodName.equals(m.name+m.desc)).toList();
                         assertEquals(1, candidates.size(), mixin.name+" target "+methodName+" must be unambiguous");
                         MethodNode method = candidates.getFirst();
+                        if(constantValue instanceof List<?> constants) for(Object object:constants) {
+                            Object expected=value((AnnotationNode)object,"floatValue");
+                            if(expected!=null) {
+                                int count=0;
+                                for(var instruction:method.instructions) if(instruction instanceof LdcInsnNode literal && expected.equals(literal.cst)) count++;
+                                assertEquals(2,count,handler.name+" must target both X/Z celestial-size constants");
+                            }
+                        }
                         if (injection.desc.endsWith("/Inject;")) {
                             Type[] handlerArgs = Type.getArgumentTypes(handler.desc), targetArgs = Type.getArgumentTypes(method.desc);
                             assertEquals(targetArgs.length + 1, handlerArgs.length, handler.name+" captures all target args plus callback");
                             for (int i=0;i<targetArgs.length;i++) assertEquals(targetArgs[i],handlerArgs[i],handler.name+" arg "+i);
                         }
-                        List<?> ats = atValue instanceof List<?> list ? list : List.of(atValue);
+                        if(injection.desc.endsWith("/ModifyArgs;") && Type.getArgumentTypes(handler.desc).length>1) {
+                            Type[] handlerArgs=Type.getArgumentTypes(handler.desc),targetArgs=Type.getArgumentTypes(method.desc);
+                            assertEquals(targetArgs.length+1,handlerArgs.length);
+                            for(int i=0;i<targetArgs.length;i++) assertEquals(targetArgs[i],handlerArgs[i+1]);
+                        }
+                        List<?> ats = atValue==null?List.of():atValue instanceof List<?> list ? list : List.of(atValue);
                         for (Object object : ats) {
                             AnnotationNode at = (AnnotationNode) object;
                             if (!"INVOKE".equals(value(at,"value"))) continue;
