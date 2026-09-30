@@ -1,6 +1,12 @@
-# Возможности 0.4.0-dev
+# Возможности 0.5.0-dev
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
+
+## Дополнения 0.5
+
+**Particles:** Jump / Landing Rings (Double Halo / Runic / Quiet), Footstep Effects (Light Prints / Petal Walk / Ember Steps / Ripples), Totem Echo (Golden Helix / Phoenix / Supernova), Block Interaction FX (Crystal / Workshop / Garden). **World:** Cosmetic Orbitals (Atom / Starlight Crown / Spiral). **Post Processing:** Weather Lens (Drizzle / Storm Glass / Mist), Underwater FX (Quiet Water / Lagoon / Deep), Retro Display (Console CRT / Pixel Adventure / Clean CRT / Soft Mosaic).
+
+Это восемь самостоятельных модулей, каждый с настройками, reset и сохранением через прежние config/profiles. Новые world-image модули можно включать без Lightweight Shaders; все четыре используют один общий scene copy/pass. Условия активации, лимиты и ручные проверки описаны в [new-visuals](new-visuals.md). Старые модули и ночной Skybox не переписаны.
 
 ## Console Menu: главное меню и загрузка мира
 

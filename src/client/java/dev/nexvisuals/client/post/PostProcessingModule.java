@@ -50,7 +50,9 @@ public final class PostProcessingModule extends VisualModule {
     public final ColorSetting damageColor=color("damage_color","Damage flash color",0xFFED625C);
     public final DoubleSetting damageIntensity=number("damage_intensity","Damage flash intensity",.12,0,.3);
     private final PostProcessingRenderer renderer=new PostProcessingRenderer(this);
+    private WorldImageExtras extras;
     private String failure="";
+    private int activeMask;
     public PostProcessingModule() {
         super("post_processing","Lightweight Shaders","World-image color grading and small screen effects. One pass before HUD/UI; automatically paused for active Iris packs and low-vision effects.",Category.SHADERS);
         group("Color",intensity,grading,brightness,contrast,saturation,gamma,temperature,tint,exposure,highlights);
@@ -74,14 +76,27 @@ public final class PostProcessingModule extends VisualModule {
         return client.gameRenderer.getMainCamera().entity() instanceof LivingEntity living
                 && (living.hasEffect(MobEffects.BLINDNESS)||living.hasEffect(MobEffects.DARKNESS));
     }
+    public void attachEffects(WeatherLensModule weather,UnderwaterEffectsModule water,RetroDisplayModule retro) {
+        if(extras!=null) throw new IllegalStateException("World-image effects already attached");
+        extras=new WorldImageExtras(weather,water,retro);
+        weather.status(this::sharedStatus);water.status(this::sharedStatus);retro.status(this::sharedStatus);
+    }
     public void render(DeltaTracker delta) {
-        if(!enabled()) return;
+        boolean grade=enabled() && intensity.get()>0;
+        if(!grade && (extras==null || !extras.requested())) { if(activeMask!=0) closeRenderer();activeMask=0;return; }
+        int mask=(grade?1:0) | (extras!=null&&extras.weather.enabled()?2:0) | (extras!=null&&extras.water.enabled()?4:0) | (extras!=null&&extras.retro.enabled()?8:0);
+        if(mask!=activeMask) { failure="";activeMask=mask; }
         var client=Minecraft.getInstance();
-        if(client.level==null || client.player==null || intensity.get()==0 || lowVision(client) || !RenderCompatibility.blockReason().isEmpty()) {
-            renderer.close(); return;
+        if(client.level==null || client.player==null || lowVision(client) || !RenderCompatibility.blockReason().isEmpty()) {
+            closeRenderer(); return;
         }
         if(!failure.isEmpty()) return;
-        try { renderer.render(client,delta); } catch(RuntimeException exception) {
+        try {
+            if(extras!=null && extras.requested()) extras.update(client,delta.getGameTimeDeltaPartialTick(false));
+            else if(extras!=null) extras.reset();
+            if(!grade && (extras==null || !extras.active())) { renderer.close();return; }
+            renderer.render(client,delta,extras);
+        } catch(RuntimeException exception) {
             failure="Paused: post-processing GPU pass failed. See latest.log; toggle to retry.";
             NexVisualsClient.LOGGER.error("NexVisuals post-processing failed; disabling the optional pass until toggled",exception);
             renderer.close();
@@ -89,9 +104,12 @@ public final class PostProcessingModule extends VisualModule {
     }
     @Override public String runtimeStatus() {
         if(!enabled()) return "Disabled; settings and presets remain saved.";
-        String blocked=RenderCompatibility.blockReason();
-        return !blocked.isEmpty()?blocked:!failure.isEmpty()?failure:"Ready; paused during Blindness/Darkness. HUD/UI is drawn after grading.";
+        return sharedStatus();
     }
-    public void closeRenderer() { renderer.close(); }
+    private String sharedStatus() {
+        String blocked=RenderCompatibility.blockReason();
+        return !blocked.isEmpty()?blocked:!failure.isEmpty()?failure:"Shared world-image pass; paused during Blindness/Darkness and active Iris packs. HUD/UI stays sharp.";
+    }
+    public void closeRenderer() { renderer.close();if(extras!=null) extras.reset(); }
     @Override protected void onDisable() { closeRenderer(); failure=""; }
 }

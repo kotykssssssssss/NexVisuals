@@ -13,7 +13,7 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Текущая версия NexVisuals — `0.4.0-dev`: Dynamic/Enhanced Day sky, GPU Live Background и расширенные lightweight effects поверх `0.3.0-dev`. Стек Minecraft/Fabric не менялся. Hooks исследованы по фактическим `SkyRenderer`, `SkyRenderState`, `FogRenderer`, `GameRenderer`, `RenderPipeline`, `ShaderManager`, `PanoramaRenderer`, `Screen`, `TitleScreen`, `PauseScreen` и mapped bytecode **1.21.11**. Runtime/GPU-проверки оставлены пользователю по его прямому указанию; пользователь уже подтвердил внешний вид предыдущего ночного skybox.
+Текущая версия NexVisuals — `0.5.0-dev`: восемь дополнительных cosmetic/world-image модулей поверх `0.4.0-dev`. Dynamic/Enhanced Day sky, ночные presets и GPU Live Background сохранены. Стек Minecraft/Fabric не менялся. Hooks исследованы по фактическим mapped sources и bytecode **1.21.11**, включая `SingleQuadParticle`, `ClientPacketListener.handleEntityEvent`, `MultiPlayerGameMode.useItemOn`, `BlockPlaceContext`, `Camera` и `Level.precipitationAt`. Разрушение блоков использует опубликованный `ClientPlayerBlockBreakEvents.AFTER` из установленного Fabric API. Runtime/GPU-проверки оставлены пользователю по его прямому указанию; пользователь уже подтвердил внешний вид предыдущего ночного skybox. Источники идей для новых модулей — в [new-visuals](new-visuals.md).
 
 Проверено 28 сентября 2026 года. Источники:
 

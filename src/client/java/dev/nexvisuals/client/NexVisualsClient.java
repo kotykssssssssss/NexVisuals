@@ -55,6 +55,8 @@ public final class NexVisualsClient implements ClientModInitializer {
     public dev.nexvisuals.client.sky.SkyboxModule skybox() { return catalog.skybox; }
     public dev.nexvisuals.client.post.PostProcessingModule post() { return catalog.post; }
     public ContainerVisualsModule containers() { return catalog.containers; }
+    public dev.nexvisuals.client.cosmetic.TotemEchoModule totemEcho() { return catalog.totemEcho; }
+    public dev.nexvisuals.client.cosmetic.BlockEffectsModule blockEffects() { return catalog.blockEffects; }
 
     @Override
     public void onInitializeClient() {
@@ -63,6 +65,12 @@ public final class NexVisualsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(catalog.trails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.jumpRings::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.footsteps::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.orbitals::tick);
+        net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents.AFTER.register((level,player,pos,state) -> {
+            if(catalog.blockEffects.enabled()) catalog.blockEffects.broken(Minecraft.getInstance(),pos);
+        });
         ClientTickEvents.END_CLIENT_TICK.register(catalog.liveBackground::tick);
         catalog.hat.register();
         config = new ConfigManager(FabricLoader.getInstance().getConfigDir().resolve("nexvisuals.json"), modules, globals);

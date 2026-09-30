@@ -25,17 +25,18 @@ public final class PostProcessingRenderer implements AutoCloseable {
     private MappableRingBuffer highlightUniforms;
     public PostProcessingRenderer(PostProcessingModule module) { this.module=module; }
     private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("nexvisuals",path); }
-    public void render(Minecraft client,DeltaTracker delta) {
+    public void render(Minecraft client,DeltaTracker delta,WorldImageExtras extras) {
         // Validate before copying/drawing; a missing resource cannot replace the image with an invalid pass.
         if(!RenderSystem.getDevice().precompilePipeline(PIPELINE).isValid()) throw new IllegalStateException("Cannot compile NexVisuals visual_grade");
-        boolean wide=module.bloom.get() && module.glowFootprint.get()==PostProcessingModule.GlowFootprint.WIDE;
+        boolean post=module.enabled() && module.intensity.get()>0;
+        boolean wide=post && module.bloom.get() && module.glowFootprint.get()==PostProcessingModule.GlowFootprint.WIDE;
         if(wide && !RenderSystem.getDevice().precompilePipeline(EXTRACT).isValid()) throw new IllegalStateException("Cannot compile NexVisuals glow_extract");
         RenderTarget target=client.getMainRenderTarget();
         if(copy==null || copy.width!=target.width || copy.height!=target.height) {
             if(copy!=null) copy.destroyBuffers();
             copy=new TextureTarget("NexVisuals image copy",target.width,target.height,false);
         }
-        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals post settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,176);
+        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals post settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,272);
         float partial=delta.getGameTimeDeltaPartialTick(false);
         float night=Math.clamp(client.gameRenderer.getMainCamera().attributeProbe().getValue(EnvironmentAttributes.STAR_BRIGHTNESS,partial)*2,0,1);
         float hurt=Math.clamp((client.player.hurtTime-partial)/Math.max(1f,client.player.hurtDuration),0,1);
@@ -43,18 +44,29 @@ public final class PostProcessingRenderer implements AutoCloseable {
         CommandEncoder encoder=RenderSystem.getDevice().createCommandEncoder();
         try(var mapped=encoder.mapBuffer(uniforms.currentBuffer(),false,true)) {
             var u=Std140Builder.intoBuffer(mapped.data());
-            boolean grading=module.grading.get();
+            boolean grading=post && module.grading.get();
             u.putVec4(grading?f(module.brightness):1,grading?f(module.contrast):1,grading?f(module.saturation):1,grading?f(module.gamma):1);
-            u.putVec4(grading?f(module.temperature):0,grading?f(module.tint):0,f(module.intensity),seconds);
-            u.putVec4(module.vignette.get()?f(module.vignetteIntensity):0,f(module.vignetteRadius),f(module.vignetteSoftness),module.grain.get()?f(module.grainIntensity):0);
-            u.putVec4(module.chromatic.get()?f(module.chromaticAmount):0,module.bloom.get()?f(module.bloomIntensity):0,f(module.bloomRadius),f(module.bloomThreshold));
-            color(u,module.filterColor.get(),module.filter.get()?f(module.filterIntensity):0);
-            color(u,module.nightColor.get(),module.nightTint.get()?f(module.nightIntensity)*night:0);
-            color(u,module.damageColor.get(),module.damage.get()?f(module.damageIntensity)*hurt:0);
+            u.putVec4(grading?f(module.temperature):0,grading?f(module.tint):0,post?f(module.intensity):0,seconds);
+            u.putVec4(post&&module.vignette.get()?f(module.vignetteIntensity):0,f(module.vignetteRadius),f(module.vignetteSoftness),post&&module.grain.get()?f(module.grainIntensity):0);
+            u.putVec4(post&&module.chromatic.get()?f(module.chromaticAmount):0,post&&module.bloom.get()?f(module.bloomIntensity):0,f(module.bloomRadius),f(module.bloomThreshold));
+            color(u,module.filterColor.get(),post&&module.filter.get()?f(module.filterIntensity):0);
+            color(u,module.nightColor.get(),post&&module.nightTint.get()?f(module.nightIntensity)*night:0);
+            color(u,module.damageColor.get(),post&&module.damage.get()?f(module.damageIntensity)*hurt:0);
             color(u,module.vignetteColor.get(),1);
             u.putVec4(target.width,target.height,0,0);
-            u.putVec4(module.edgeSoftness.get()?f(module.edgeIntensity):0,f(module.edgeRadius),module.glowFootprint.get().ordinal(),0);
+            u.putVec4(post&&module.edgeSoftness.get()?f(module.edgeIntensity):0,f(module.edgeRadius),module.glowFootprint.get().ordinal(),0);
             u.putVec4(grading?f(module.exposure):0,grading?f(module.highlights):0,f(module.grainScale),0);
+            if(extras==null) {
+                for(int i=0;i<6;i++) u.putVec4(0,0,0,0);
+            } else {
+                var rain=extras.weather;var water=extras.water;var retro=extras.retro;
+                u.putVec4(extras.rain,f(rain.density),f(rain.speed),f(rain.refraction));
+                u.putVec4(rain.style.get().ordinal(),f(rain.shading),0,0);
+                u.putVec4(extras.submerged,f(water.wobble),f(water.speed),f(water.caustics));
+                u.putVec4(f(water.causticScale),f(water.silt),0,0);
+                u.putVec4(retro.enabled()?f(retro.intensity):0,retro.pixelSize.get(),retro.levels.get(),f(retro.dither));
+                u.putVec4(f(retro.scanlines),retro.spacing.get(),f(retro.phosphor),0);
+            }
         }
         encoder.copyTextureToTexture(target.getColorTexture(),copy.getColorTexture(),0,0,0,0,0,target.width,target.height);
         if(wide) extractHighlights(encoder); else closeGlow();

@@ -36,10 +36,11 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.4.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.5.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 ## Что доступно
 
+- Восемь новых модулей 0.5: **Jump / Landing Rings, Footstep Effects, Totem Echo, Block Interaction FX, Cosmetic Orbitals, Weather Lens, Underwater FX, Retro Display**. Первые пять — частицы в мире с нормальной глубиной; последние три — реальные GPU-pattern/refraction/pixel effects перед HUD. У каждого есть несколько editable presets, reset и поддержка config/profiles. Подробности и checklist: [обновление 0.5](docs/new-visuals.md).
 - Custom Skybox: процедурный купол, звёзды, sun/moon, aurora/nebula/meteors; девять стилей. **Enhanced Day** и **Dynamic / NexVisuals** добавляют отдельную утреннюю палитру, плавный полный цикл суток, дневную дымку и мягкий солнечный ореол. Прежние ночные presets сохранены.
 - Live Background: шесть процедурных GPU-обоев **NexVisuals / Aurora / Flow / Nebula / Waves / Minimal** для главного меню и редактора, опционально pause menu. Три цвета с alpha, скорость, движение, мягкость форм, яркость, насыщенность, intensity, motes и dim; режим Vanilla. Работает вместе с Console Menu.
 - Lightweight Shaders: grading, exposure/highlights, vignette, chromatic aberration, grain, color/night filters и damage flash; восемь стилей. **Dreamy** и обновлённый **Cinematic** используют широкое выделение ярких участков и мягкую периферию. Compact glow остаётся; Wide добавляет маленький quarter-resolution pass. Активный Iris shader pack приостанавливает sky/post renderer.
@@ -82,6 +83,7 @@ Hit Effects и Hit Sounds показывают **локальную попытк
 - [Модули, пресеты и ограничения](docs/features.md).
 - [Архитектура и добавление модулей](docs/architecture.md).
 - [Результаты проверки и ограничения](docs/validation.md).
+- [Восемь новых эффектов: исследование, настройки и ручная проверка](docs/new-visuals.md).
 
 `src/main/java/dev/nexvisuals/core` содержит независимую Java-логику; `src/client/java/dev/nexvisuals/client` — интеграцию с игрой. Метаданные Fabric объявляют `environment: client` и точную зависимость `minecraft: =1.21.11`.
 

@@ -4,6 +4,7 @@
     {"type":"single","resource":"nexvisuals:particle/spark","sprite":"nexvisuals:spark"},
     {"type":"single","resource":"nexvisuals:particle/ring","sprite":"nexvisuals:ring"},
     {"type":"single","resource":"nexvisuals:particle/slash","sprite":"nexvisuals:slash"},
-    {"type":"single","resource":"nexvisuals:particle/star","sprite":"nexvisuals:star"}
+    {"type":"single","resource":"nexvisuals:particle/star","sprite":"nexvisuals:star"},
+    {"type":"single","resource":"nexvisuals:particle/footprint","sprite":"nexvisuals:footprint"}
   ]
 }

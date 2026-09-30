@@ -33,6 +33,15 @@ public final class EffectEmitter {
                 sprite(client, EffectParticle.Shape.ORB), size, primary, secondary, lifetime, speed, drift, phase, active));
     }
 
+    /** A world-fixed horizontal quad through vanilla particle batching, with normal depth testing. */
+    public void ground(Minecraft client, Vec3 position, EffectParticle.Shape shape, float size,
+                       int primary, int secondary, int lifetime, EffectParticle.Scaling scaling,
+                       float rotation, BooleanSupplier active) {
+        if (!reserve(client)) return;
+        client.particleEngine.add(new EffectParticle(client.level,position.x,position.y,position.z,0,0,0,
+                sprite(client,shape),size,primary,secondary,lifetime,0,true,true,scaling,Easing.OUT_CUBIC,rotation,0,active,true));
+    }
+
     private boolean reserve(Minecraft client) {
         if (client.level == null || client.options.particles().get() == ParticleStatus.MINIMAL) return false;
         long now = client.level.getGameTime();

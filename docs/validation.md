@@ -1,3 +1,47 @@
+# Проверка 0.5.0-dev — 30 сентября 2026
+
+## Автоматически проверено
+
+Minecraft из `gradle.properties` и production `fabric.mod.json` — **1.21.11**, не 1.21.1. Стек не обновлялся: Java 21 (Oracle 21.0.9+7-LTS-338), Fabric Loader 0.19.5, Fabric API 0.141.6+1.21.11, Loom 1.14.10, Gradle Wrapper 9.2.1, official Mojang mappings 1.21.11. Все cache/TEMP направлены внутрь проекта; использованы доступные зависимости `--offline`.
+
+Фактически выполнено из `E:\Projects\nexvisuals`:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME = Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP = Join-Path (Get-Location) '.tools\tmp'
+$env:TMP = $env:TEMP
+.\gradlew.bat test clientTest --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\tools\validate_shaders.ps1 -Validator '.tools\glslang-16.6.0\bin\glslang.exe'
+git diff --check
+```
+
+- **Clean build успешен за 30 секунд**, все 15 tasks выполнены, `remapJar` и `verifyModJar` прошли. Java compilation/Gradle deprecation warnings в финальной сборке отсутствуют.
+- **112 tests: 83 core + 29 client; 0 failures/errors/skipped.** Добавлено 13 focused tests: GroundMotion jump/landing/ledge/teleport, distance-based bounded StepCadence, FPS-independent EnvironmentEnvelope с pause/reset/drying, distinct editable recipes восьми реальных модулей, config restart, profile save/rename/load/delete, legacy defaults/night preservation, malformed values/clamping/corrupt-profile backup, independent world-image requests без grading. Все прежние тесты сохранены, включая actual catalog и pinned Mixin bytecode contracts; последние теперь проверяют также два новых adapters.
+- Отдельно **5 GLSL 330 pairs compile/link** и UBO reflection с настоящими Minecraft 1.21.11 imports. SkyConfig 176, StarConfig 48, VisualConfig **272**, BackgroundConfig 96, HighlightConfig 16 bytes. Это shader source/interface/layout checks, не GPU draw.
+- `git diff --check` успешен; whitespace новых untracked source/docs проверен отдельно. Нет commit/push/tag/release.
+- Production JAR проверяет exact Minecraft `=1.21.11`, client-only metadata, отсутствие server entrypoint, declared Mixin classes, шесть particle masks, десять GLSL sources, три bundled profiles, отсутствие bundled Minecraft/test classes.
+
+Промежуточный `clientTest` compile один раз завершился ошибкой: в новом тесте DoubleSetting был вызван `set(0)` вместо `set(0.0)`. Ошибка исправлена; повтор suite и последующий clean build успешны. Core tests при той неудачной попытке проходили. Shader checks не падали.
+
+## Готовый production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.5.0-dev.jar` — 416612 bytes.** Это production/remapped mod, не `-sources.jar` и не dev artifact. SHA-256: `E6B92E1D4A28B9C7DC2A0F274EE2E4580994EB5C990B57A5180E004552B68ECE`.
+
+Нужны Minecraft 1.21.11, Java 21+, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11. Других обязательных модов/библиотек нет. Sodium и Iris по желанию устанавливаются отдельно; они не вложены в NexVisuals. Уберите прежний NexVisuals JAR при замене.
+
+Отчёты: `build/reports/tests/test/index.html`, `build/reports/tests/clientTest/index.html`.
+
+## Что проверяет пользователь
+
+**Minecraft/runClient/computer-use не запускались.** Визуальные эффекты, runtime Mixin transformation, GPU driver output, resource reload, FPS и совместимость Sodium/Iris этой сборки не подтверждены. Implemented Iris pack guard — защита, не доказательство общей совместимости. Включены восемь новых модулей; существующие night Skybox, menu, mini HUD/Fire/Shield сохранены в коде и regression tests, но требуют краткой ручной проверки вместе с новым JAR.
+
+Конкретный [checklist для восьми модулей, config/profiles, limits и совместимости](new-visuals.md#ручной-checklist). Старый расширенный regression checklist сохранён ниже как история предыдущего этапа.
+
+<details>
+<summary>История проверки 0.4.0-dev — предыдущий этап, старые JAR/числа не относятся к текущей сборке</summary>
+
 # Проверка 0.4.0-dev — 30 сентября 2026
 
 ## Что проверено автоматически
@@ -115,3 +159,5 @@ GLSL: **5 vertex/fragment пар compile/link успешны**, с настоя�
 - Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, recipes для сторонних shader packs, полноценный curve editor и tooltips reskin отложены. Собственные lightweight presets уже реализованы.
 - Other crosshair replacement mods и modded containers, обходящие `AbstractContainerScreen`/`slotClicked`, отдельно не поддержаны/не проверены. Сохранение vanilla attack indicator использует геометрию vanilla reticle именно 1.21.11.
 - Есть только клиентская косметика локального игрока; синхронизации hats/trails другим игрокам нет.
+
+</details>
