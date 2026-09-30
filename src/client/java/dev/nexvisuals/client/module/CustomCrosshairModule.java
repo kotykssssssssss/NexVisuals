@@ -7,7 +7,9 @@ import dev.nexvisuals.core.setting.BooleanSetting;
 import dev.nexvisuals.core.setting.ColorSetting;
 import dev.nexvisuals.core.setting.IntSetting;
 import dev.nexvisuals.core.setting.EnumSetting;
+import dev.nexvisuals.core.setting.DoubleSetting;
 import dev.nexvisuals.core.hud.ReticleMask;
+import dev.nexvisuals.core.hud.ReticleMotion;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
@@ -16,9 +18,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.resources.Identifier;
 
-/** A static cosmetic reticle. Target detection and attack timing remain entirely vanilla. */
+/** Cosmetic reticle geometry and optional local-state animation; vanilla attack feedback stays separate. */
 public final class CustomCrosshairModule extends VisualModule implements HudModule {
     public enum Shape { CROSS, DOT, CIRCLE, CHEVRON }
+    public enum Motion { OFF, BREATHE, MOVEMENT, SWING, ROTATE }
+    private final EnumSetting<Motion> motion = add(new EnumSetting<>("motion", "Animation", "Cosmetic animation from time or your own movement/swing; no target detection.", Motion.OFF, Motion.class));
+    private final DoubleSetting amplitude = add(new DoubleSetting("motion_amount", "Animation amount", "Maximum extra scale; does not change aim or spread.", .25, 0, 1));
+    private final DoubleSetting frequency = add(new DoubleSetting("motion_speed", "Breathing speed", "Cycles per second, independent of FPS.", .7, .1, 4));
+    private final DoubleSetting rotation = add(new DoubleSetting("rotation_speed", "Rotation speed", "Degrees per second in Rotate mode.", 30, -90, 90));
     private final EnumSetting<Shape> shape = add(new EnumSetting<>("shape", "Shape", "Different reticle geometry; never uses target or hidden entity data.", Shape.CROSS, Shape.class));
     private final IntSetting size = add(new IntSetting(
             "size", "Height", "Vertical arm length, ring radius or chevron height in GUI pixels.", 5, 0, 24));
@@ -46,6 +53,10 @@ public final class CustomCrosshairModule extends VisualModule implements HudModu
         preset("Precision", "Tiny arms around a central point.", "size", 2, "width", 2, "gap", 2, "center_dot", true, "dot_size", 1, "color", "#FF71E6B5");
         preset("Orbit", "A circular reticle with a single-pixel center.", "shape", "CIRCLE", "size", 5, "width", 5, "gap", 1, "center_dot", true, "dot_size", 1, "color", "#FFB298FF");
         preset("Chevron", "An angular upward-pointing reticle.", "shape", "CHEVRON", "size", 5, "width", 6, "gap", 0, "color", "#FFFFD080");
+        preset("Breathing Orbit", "A softly expanding ring with a fixed vanilla attack indicator.", "shape", "CIRCLE", "motion", "BREATHE", "center_dot", true, "dot_size", 1, "color", "#FFB298FF");
+        preset("Motion Cross", "Expands with your own horizontal movement.", "motion", "MOVEMENT", "motion_amount", .4, "color", "#FF71E6B5");
+        preset("Swing Chevron", "A cosmetic pulse during your own hand swing.", "shape", "CHEVRON", "motion", "SWING", "motion_amount", .6);
+        preset("Rotating Cross", "A slow spinning reticle; purely decorative.", "motion", "ROTATE", "rotation_speed", 25);
     }
 
     @Override
@@ -62,6 +73,23 @@ public final class CustomCrosshairModule extends VisualModule implements HudModu
         }
         int x = graphics.guiWidth() / 2;
         int y = graphics.guiHeight() / 2;
+        boolean animated = motion.get() != Motion.OFF;
+        if (animated) {
+            double seconds=(client.level.getGameTime()+deltaTracker.getGameTimeDeltaPartialTick(false))/20.0;
+            double envelope=switch(motion.get()) {
+                case BREATHE -> ReticleMotion.breathe(seconds,frequency.get());
+                case MOVEMENT -> ReticleMotion.movement(client.player.getDeltaMovement().horizontalDistance());
+                case SWING -> ReticleMotion.swing(client.player.getAttackAnim(deltaTracker.getGameTimeDeltaPartialTick(false)));
+                default -> 0;
+            };
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(x,y);
+            float scale=(float)ReticleMotion.scale(envelope,amplitude.get());
+            graphics.pose().scale(scale,scale);
+            if(motion.get()==Motion.ROTATE) graphics.pose().rotate((float)Math.toRadians((seconds*rotation.get())%360));
+            graphics.pose().translate(-x,-y);
+        }
+        try {
         int arm = size.get();
         int thick = thickness.get();
         int space = gap.get();
@@ -83,6 +111,7 @@ public final class CustomCrosshairModule extends VisualModule implements HudModu
         }
         if (centerDot.get() || shape.get() == Shape.DOT) arm(graphics, x - dotSize.get() / 2, y - dotSize.get() / 2, dotSize.get(), dotSize.get());
         return true;
+        } finally { if(animated) graphics.pose().popMatrix(); }
     }
 
     private void arm(GuiGraphics graphics, int x, int y, int width, int height) {

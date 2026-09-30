@@ -22,7 +22,7 @@
 
 `BuiltinProfile` перечисляет три bundled global recipes, которые `ProfileManager.applyBuiltin` загружает через тот же ConfigManager. Путь задаётся только enum, а не текстом пользователя. Catalog tests проверяют, что все module/setting IDs рецептов существуют, и что итоговые конфигурации различны и сохраняются.
 
-`SettingControls` — единая фабрика controls; `NexVisualsScreen` автоматически выводит настройки, selector пресетов и actions. Новому модулю не нужен собственный settings screen. Для цветов есть ARGB-поле и шесть быстрых swatches, сохраняющих alpha.
+`SettingControls` — единая фабрика controls; `NexVisualsScreen` автоматически выводит настройки, selector пресетов и actions. Новому модулю не нужен собственный settings screen. Для цветов есть ARGB-поле, шесть быстрых swatches и общий `ColorPickerScreen`. `core.color.HsvColor`/`ColorPickerModel` выполняют HSV/RGB conversion, сохраняют alpha и выбранный hue на сером/чёрном. Палитра использует стандартные GUI quads и widgets; отдельные textures/framebuffers ей не нужны. Цвет действует в памяти сразу; Cancel восстанавливает значение до открытия. Live Background поддерживает этот экран, сохраняя прежний shader/canvas.
 
 ## Config и профили
 
@@ -83,7 +83,17 @@ Pipelines строятся через `RenderPipeline` snippets и не реги
 
 `RenderCompatibility` обнаруживает Iris через Fabric Loader и один раз связывает **публичный** `IrisApi.isShaderPackInUse` с MethodHandle. В кадре нет reflection search. Активный shader pack или недоступный API блокирует оба новых rendering paths с сообщением в generic GUI; settings остаются сохранёнными. Post target освобождается при блокировке. При установленном Iris без pack новые paths допускаются, но практическая совместимость не проверена. Нет управления private shader options или скачивания packs.
 
-## Container visuals
+## Дополнение HUD 0.6
+
+`EquipmentHudModule`, `ItemCounterModule`, `StatusEffectsHudModule` и `ActiveModulesHudModule` расширяют существующий `TextHudModule`: общий background, color, scale, anchor/relative placement и `EditableHud`. `HudDispatcher` регистрирует их обычным способом через Fabric HUD API, новых hooks/Mixins нет. Native item models и effect sprites берутся из Minecraft/resource packs. Каталог создаёт только metadata/фиксированные буферы; `ItemStack.EMPTY`/`Items` впервые используются на игровом tick после bootstrap реестров.
+
+Equipment обновляется на tick, item counter/active list — раз в 4 ticks, status list — раз в 5 ticks. Иконки/прочные labels/таймеры обновляются в этих snapshots; рендер не сортирует список и не сканирует inventory. Буферы оборудования ограничены шестью элементами, HUD lists имеют max rows. Выключенный HUD может один раз заполнить preview в editor, без вычисления каждой строки каждый кадр.
+
+`ReticleMotion` — небольшие чистые envelope-функции от времени/своего movement/swing; pose transform применяется только к custom reticle, vanilla attack indicator рисуется после восстановления pose. Cached `ReticleMask` не перестраивается для каждого animation frame. `HudFeedback` вычисляет low-health severity, два heartbeat peaks, durability и effect durations. Screen Edge Tint получает только здоровье/hurt timer своего игрока. Старые config defaults остаются OFF/STATIC, ID не меняются.
+
+Hearts/Pixels используют существующие `EffectEmitter`/`EffectParticle`, particle atlas и общий budget; это две новые формы в прежнем Hit Effects. Геометрия/движение/параметры различаются, gameplay/пакеты не меняются. Предыдущие Skybox/post shader chains не затронуты.
+
+## Container visuals (прежняя система)
 
 Одна `ContainerVisualState` принадлежит одному `AbstractContainerScreen`. Общие hooks украшают panel и active slots, наблюдают `slotClicked` и рисуют ghosts после обычного содержимого. Они не отменяют clicks, не меняют slots/packets и не задерживают close.
 

@@ -11,7 +11,7 @@ import java.util.function.BooleanSupplier;
 
 /** A textured vanilla billboard. Vanilla owns batching, depth testing and disposal. */
 public final class EffectParticle extends SingleQuadParticle {
-    public enum Shape { ORB, SPARK, RING, SLASH, STAR, FOOTPRINT }
+    public enum Shape { ORB, SPARK, RING, SLASH, STAR, FOOTPRINT, HEART, PIXEL }
     public enum Scaling { SHRINK, EXPAND, PULSE, CONSTANT }
     private static final Optional<ParticleLimit> LIMIT = Optional.of(new ParticleLimit(768));
     private final float startSize, spin;

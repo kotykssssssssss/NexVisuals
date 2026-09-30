@@ -218,7 +218,9 @@ public final class NexVisualsScreen extends Screen {
         addWidget(reset);
         settingPane.add(reset, 27);
         SettingControls factory = new SettingControls(font, globals, state, this::registerControl,
-                setting -> capturing = setting, this::requestRebuild);
+                setting -> capturing = setting, color -> minecraft.setScreen(new ColorPickerScreen(this, color, globals, () -> {
+                    state.drafts.remove(color); state.invalidDrafts.remove(color); requestRebuild();
+                })), this::requestRebuild);
         int y = 56;
         if (state.globalSettings && ShaderIntegration.available()) {
             NexButton shaders = button(x, 0, settingPane.area.width() - 16, 20,

@@ -1,3 +1,47 @@
+# Проверка 0.6.0-dev — 30 сентября 2026
+
+## Автоматически проверено
+
+Цель из Gradle и production metadata: **Minecraft 1.21.11**, не 1.21.1. Java 21 (Oracle 21.0.9), Fabric Loader 0.19.5, Fabric API 0.141.6+1.21.11, Loom 1.14.10, official Mojang mappings 1.21.11, Gradle Wrapper 9.2.1. Dependencies не обновлялись; cache/TEMP внутри проекта; build выполнен offline.
+
+Команды из `E:\Projects\nexvisuals`:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME = Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP = Join-Path (Get-Location) '.tools\tmp'
+$env:TMP = $env:TEMP
+.\gradlew.bat test clientTest --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\tools\validate_shaders.ps1 -Validator '.tools\glslang-16.6.0\bin\glslang.exe'
+git diff --check
+```
+
+- Финальная **clean build успешна за 40 секунд**, 15 tasks выполнены, remapJar/check/verifyModJar прошли. Java/Gradle warnings в финальном output отсутствуют.
+- **125 tests: 91 core + 34 client; 0 failures/errors/skipped.** Добавлены 13 focused tests: HSV/RGB round-trip с alpha, clamping/hue wrap/gray-black hue retention, channel/hex edits, health/durability/duration/heartbeat envelopes, reticle motion, четыре реальных HUD definitions/editor settings, presets/config/profile persistence и legacy defaults, malformed settings, atlas contributions и PNG masks. Существующие core/catalog/Mixin contract tests сохранены и прошли.
+- **5 GLSL 330 pairs compile/link** и uniform reflection с настоящими Minecraft 1.21.11 includes: SkyConfig 176, StarConfig 48, VisualConfig 272, BackgroundConfig 96, HighlightConfig 16 bytes. Это source/layout validation, не GPU draw. Shader chain на этом этапе не переписан.
+- `git diff --check` успешен; новые untracked text files отдельно проверены на trailing whitespace. Production JAR проверен на exact MC/client-only metadata, объявленные Mixin classes, восемь masks, десять GLSL sources, три bundled profiles; без Minecraft/test classes. Новые пять client classes (четыре HUD + ColorPickerScreen) присутствуют в JAR.
+- Изменения только внутри NexVisuals; без Minecraft/runClient/computer-use, commit/push/tag/release.
+
+Промежуточные неудачи не скрываются: первая compilation потребовала явно указать String для overloaded Font.width comparator. Следующая headless suite дала 28 failures из одной причины: обращение к ItemStack.EMPTY в constructor каталога запускало Minecraft registries до bootstrap. Обращение перенесено на in-world tick; headless bootstrap не добавлялся. Ещё один новый тест ошибочно выбирал первый classpath particle atlas (Minecraft, где не у каждого source есть sprite); проверка теперь учитывает atlas contributions и их типы. Все причины исправлены, повторный полный suite и финальные clean builds прошли. Последний rebuild дополнительно проверил адаптивную палитру и сохранение прежнего spark spin behavior.
+
+## Production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.6.0-dev.jar` — 461445 bytes.** SHA-256: `C7B13FDA8BFEB67096342EF84EA972F2723F59E0CEDFCC1AA36BBF837545C647`.
+
+Это production/remapped мод; `nexvisuals-0.6.0-dev-sources.jar` не ставить в mods. Требуются Minecraft **1.21.11**, Java 21+, Fabric Loader >=0.19.5 и Fabric API >=0.141.6+1.21.11. Других обязательных библиотек нет. Sodium/Iris optional, устанавливаются отдельно. Предыдущий NexVisuals JAR заменить, не оставлять два экземпляра.
+
+## Ручная проверка и ограничения
+
+**Minecraft не запускался.** HUD/icons/animated reticle/pulses/Hearts/Pixels/picker не названы визуально проверенными. Не подтверждены FPS/GPU/runtime Mixin transformation, actual server play, resource reload и Sodium/Iris compatibility. Новые modules OFF по defaults, новые animation modes OFF/STATIC; прежний config сохраняет старые значения. Старые night Skybox, post shaders, wallpapers, Console Menu, mini HUD/Fire/Shield не переписаны.
+
+[Точный checklist 0.6: HUD Editor, данные/таймеры, HSV/RGB/alpha, real-time wallpaper, crosshair, pulse, particles, persistence и совместимость](hud-customization.md#проверка-вручную).
+
+Отчёты: `build/reports/tests/test/index.html`, `build/reports/tests/clientTest/index.html`. Полноценный shader pack, hidden entity information, automation, fake damage/kill confirmation не добавлены.
+
+<details>
+<summary>История 0.5.0-dev и более ранних этапов: старые JAR/числа не относятся к текущей сборке</summary>
+
 # Проверка 0.5.0-dev — 30 сентября 2026
 
 ## Автоматически проверено
@@ -159,5 +203,7 @@ GLSL: **5 vertex/fragment пар compile/link успешны**, с настоя�
 - Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, recipes для сторонних shader packs, полноценный curve editor и tooltips reskin отложены. Собственные lightweight presets уже реализованы.
 - Other crosshair replacement mods и modded containers, обходящие `AbstractContainerScreen`/`slotClicked`, отдельно не поддержаны/не проверены. Сохранение vanilla attack indicator использует геометрию vanilla reticle именно 1.21.11.
 - Есть только клиентская косметика локального игрока; синхронизации hats/trails другим игрокам нет.
+
+</details>
 
 </details>

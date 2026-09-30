@@ -5,6 +5,8 @@
     {"type":"single","resource":"nexvisuals:particle/ring","sprite":"nexvisuals:ring"},
     {"type":"single","resource":"nexvisuals:particle/slash","sprite":"nexvisuals:slash"},
     {"type":"single","resource":"nexvisuals:particle/star","sprite":"nexvisuals:star"},
-    {"type":"single","resource":"nexvisuals:particle/footprint","sprite":"nexvisuals:footprint"}
+    {"type":"single","resource":"nexvisuals:particle/footprint","sprite":"nexvisuals:footprint"},
+    {"type":"single","resource":"nexvisuals:particle/heart","sprite":"nexvisuals:heart"},
+    {"type":"single","resource":"nexvisuals:particle/pixel","sprite":"nexvisuals:pixel"}
   ]
 }

@@ -1,6 +1,12 @@
-# Возможности 0.5.0-dev
+# Возможности 0.6.0-dev
 
 Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
+
+## Дополнения 0.6
+
+Четыре новых элемента в категории **HUD**: Equipment HUD (armor/hands/durability), Item Counter (свои предметы), Active Visuals (список enabled modules), Status Effects HUD (локальные effect icons/levels/timers). Все используют прежний HUD Editor, anchors/relative placement, scale, colors/backgrounds и profiles.
+
+Кнопка **Picker** у любого ColorSetting: SV-поле, hue/alpha strips, HSV/RGB sliders, ARGB hex, live preview, Cancel/Reset/Done, mouse/keyboard controls. Custom Crosshair получил opt-in Breathe/Movement/Swing/Rotate; Screen Edge Tint — Low HP Pulse / Damage Pulse / Calm Breath. Hit Effects расширен Hearts и Pixels с разными оригинальными masks/движением. Старые ID и статичные defaults сохранены. [Подробности, ограничения и ручной checklist](hud-customization.md).
 
 ## Дополнения 0.5
 
@@ -51,6 +57,8 @@
 | Rings | Два расширяющихся кольца разного радиуса и дополнительные motes |
 | Slash | Две пересекающиеся текстурные дуги с разным направлением вращения |
 | Impact | Центральная звезда-вспышка, expanding ring и радиальные sparks |
+| Hearts | Розовые сердечки поднимаются и дрейфуют наружу; сохраняют вертикальную ориентацию по preset defaults |
+| Pixels | Чёткие квадратные фрагменты разлетаются, вращаются и быстро исчезают |
 | Classic | Старый emitter foundation; для него дополнительно включается Cosmetic Particles |
 
 Пять новых основных стилей работают при включении одного **Hit Effects**. Настройки: primary/secondary ARGB, общая opacity, размер, intensity/count, lifetime, spread, speed, gravity, fade, luminous appearance, random roll, scale-animation override, easing и accent components. Marker и слабая screen flash включаются отдельно. Glow — яркость и мягкая маска, без bloom pass. Эффекты не видны сквозь стены.

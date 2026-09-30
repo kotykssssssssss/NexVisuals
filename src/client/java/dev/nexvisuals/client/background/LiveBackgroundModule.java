@@ -53,6 +53,7 @@ public final class LiveBackgroundModule extends VisualModule {
     }
     private boolean supports(Screen screen) {
         return screen instanceof TitleScreen || screen instanceof NexVisualsScreen || screen instanceof ProfilesScreen
+                || screen instanceof dev.nexvisuals.client.gui.ColorPickerScreen
                 || pauseMenu.get() && screen instanceof PauseScreen;
     }
     public boolean render(Screen screen,GuiGraphics graphics) {

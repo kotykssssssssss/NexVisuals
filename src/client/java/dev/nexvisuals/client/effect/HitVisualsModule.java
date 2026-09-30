@@ -16,7 +16,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 /** Feedback for a local attack attempt. It does not assert that the server accepted damage. */
 public final class HitVisualsModule extends VisualModule implements HudModule {
-    public enum Style { BURST, SPARKS, RINGS, SLASH, IMPACT, CLASSIC }
+    public enum Style { BURST, SPARKS, RINGS, SLASH, IMPACT, CLASSIC, HEARTS, PIXELS }
     public enum ScaleMode { PRESET, SHRINK, EXPAND, PULSE, CONSTANT }
     private final EnumSetting<Style> style = add(new EnumSetting<>("preset", "Effect shape", "Distinct motion and geometry. Classic uses the optional Cosmetic Particles module.", Style.IMPACT, Style.class));
     private final BooleanSetting particles = add(new BooleanSetting("particles", "World effect", "Draw cosmetic feedback at the visible local attack point.", true));
@@ -55,6 +55,8 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
         preset("Rings", "Two expanding concentric rings with drifting accent motes.", "preset", "RINGS", "primary", "#EE9CA4FF", "secondary", "#BBEF92FF", "lifetime", 22);
         preset("Slash", "Two rotating tapered arcs cross the impact point.", "preset", "SLASH", "primary", "#EEF5F9FF", "secondary", "#AA7CE9FF", "lifetime", 12);
         preset("Impact", "Star flash, expanding shock ring and radial sparks.", "preset", "IMPACT", "flash", .035);
+        preset("Hearts", "Upright pink hearts rise and drift outward, gently shrinking.", "preset", "HEARTS", "primary", "#FFF58FB5", "secondary", "#AAE464D0", "speed", .08, "gravity", -.15, "lifetime", 28, "amount", 12, "random_rotation", false);
+        preset("Pixels", "Crisp square fragments tumble outward with quick decay.", "preset", "PIXELS", "primary", "#FF8AEEFF", "secondary", "#BB907CFF", "speed", .18, "gravity", .65, "lifetime", 14, "amount", 28);
     }
     public void attacked(Minecraft client, Vec3 position) {
         if (!enabled() || client.level == null) return;
@@ -79,7 +81,7 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
             }
             default -> { }
         }
-        boolean core = style.get() == Style.BURST || style.get() == Style.SPARKS;
+        boolean core = style.get() == Style.BURST || style.get() == Style.SPARKS || style.get() == Style.HEARTS || style.get() == Style.PIXELS;
         if (!core && !accents.get()) return;
         int count = Math.min(96, Math.max(1, (int) (amount.get() * intensity.get() * (core ? 1 : .5))));
         for (int i = 0; i < count; i++) {
@@ -88,14 +90,20 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
             double radial = Math.sqrt(1 - elevation * elevation), dx = Math.cos(azimuth) * radial, dz = Math.sin(azimuth) * radial;
             Vec3 start = position.add(dx * spread.get(), elevation * spread.get(), dz * spread.get());
             boolean spark = style.get() == Style.SPARKS || style.get() == Style.IMPACT;
-            emit(client, start, spark ? EffectParticle.Shape.SPARK : EffectParticle.Shape.ORB, spark ? .16f : .13f,
-                    dx * speed.get(), elevation * speed.get(), dz * speed.get(), EffectParticle.Scaling.SHRINK,
-                    rotate.get() ? random.nextFloat() * 6.283f : 0, spark ? .06f : 0);
+            EffectParticle.Shape shape = switch(style.get()) {
+                case HEARTS -> EffectParticle.Shape.HEART;
+                case PIXELS -> EffectParticle.Shape.PIXEL;
+                default -> spark ? EffectParticle.Shape.SPARK : EffectParticle.Shape.ORB;
+            };
+            boolean hearts=style.get()==Style.HEARTS;
+            emit(client, start, shape, hearts ? .19f : spark ? .16f : .13f,
+                    dx * speed.get(), (hearts ? Math.abs(elevation)+.3 : elevation) * speed.get(), dz * speed.get(), EffectParticle.Scaling.SHRINK,
+                    rotate.get() ? random.nextFloat() * 6.283f : 0, spark || rotate.get() && style.get()==Style.PIXELS ? .06f : 0);
         }
     }
     private void emit(Minecraft client, Vec3 p, EffectParticle.Shape shape, float baseSize, double dx, double dy, double dz,
                       EffectParticle.Scaling scale, float rotation, float spin) {
-        boolean detail = shape == EffectParticle.Shape.ORB || shape == EffectParticle.Shape.SPARK;
+        boolean detail = shape == EffectParticle.Shape.ORB || shape == EffectParticle.Shape.SPARK || shape == EffectParticle.Shape.HEART || shape == EffectParticle.Shape.PIXEL;
         if (scaling.get() != ScaleMode.PRESET) scale = EffectParticle.Scaling.valueOf(scaling.get().name());
         emitter.emit(client, p, dx, dy, dz, shape, baseSize * size.get().floatValue(), Draw.withAlpha(primary.get(), opacity.get().floatValue()),
                 Draw.withAlpha(secondary.get(), opacity.get().floatValue()), lifetime.get(),

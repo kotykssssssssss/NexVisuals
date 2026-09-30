@@ -14,7 +14,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 /** Shared placement, appearance and editor integration for small text HUD elements. */
 public abstract class TextHudModule extends VisualModule implements HudModule, EditableHud {
-    protected final EnumSetting<Anchor> anchor = add(new EnumSetting<>("anchor", "Anchor", "Element alignment.", Anchor.TOP_LEFT, Anchor.class));
+    protected final EnumSetting<Anchor> anchor;
     private final IntSetting xOffset;
     private final IntSetting yOffset;
     private final BooleanSetting relative = add(new BooleanSetting("relative_position", "Relative position", "The HUD editor enables this to preserve relative placement after resizing.", false));
@@ -30,7 +30,11 @@ public abstract class TextHudModule extends VisualModule implements HudModule, E
     protected String text = "";
 
     protected TextHudModule(String id, String name, String description, int defaultY, String preview) {
+        this(id, name, description, defaultY, preview, Anchor.TOP_LEFT);
+    }
+    protected TextHudModule(String id, String name, String description, int defaultY, String preview, Anchor defaultAnchor) {
         super(id, name, description, Category.HUD);
+        anchor = add(new EnumSetting<>("anchor", "Anchor", "Element alignment.", defaultAnchor, Anchor.class));
         this.preview = preview;
         xOffset = add(new IntSetting("x", "X offset", "GUI pixels from the anchor when Relative position is disabled.", 8, 0, 4096));
         yOffset = add(new IntSetting("y", "Y offset", "GUI pixels from the anchor when Relative position is disabled.", defaultY, 0, 4096));
@@ -70,6 +74,8 @@ public abstract class TextHudModule extends VisualModule implements HudModule, E
         return true;
     }
     @Override public void renderPreview(Minecraft client, GuiGraphics graphics) {
+        // An editor preview may belong to a disabled module. Populate it once, not every frame.
+        if (text.isEmpty() && canDisplay(client)) tick(client);
         Bounds bounds = bounds(client, graphics.guiWidth(), graphics.guiHeight());
         graphics.pose().pushMatrix();
         try {

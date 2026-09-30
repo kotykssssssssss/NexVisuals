@@ -27,15 +27,17 @@ final class SettingControls {
     private final GuiState state;
     private final Consumer<AbstractWidget> register;
     private final Consumer<KeybindSetting> captureKey;
+    private final Consumer<ColorSetting> openColor;
     private final Runnable rebuild;
 
     SettingControls(Font font, GlobalSettings globals, GuiState state, Consumer<AbstractWidget> register,
-                    Consumer<KeybindSetting> captureKey, Runnable rebuild) {
+                    Consumer<KeybindSetting> captureKey, Consumer<ColorSetting> openColor, Runnable rebuild) {
         this.font = font;
         this.globals = globals;
         this.state = state;
         this.register = register;
         this.captureKey = captureKey;
+        this.openColor = openColor;
         this.rebuild = rebuild;
     }
 
@@ -72,7 +74,9 @@ final class SettingControls {
             control = new NexButton(x, 0, width, 20, () -> keyName(keybind.get()), () -> false,
                     () -> captureKey.accept(keybind), globals);
         } else if (setting instanceof ColorSetting color) {
-            control = editor(pane, x, width, setting, color.hex(), 9, color::setHex);
+            control = editor(pane, x, width - 58, setting, color.hex(), 9, color::setHex);
+            add(pane, new NexButton(x + width - 54, 0, 54, 20, () -> "Picker", () -> false,
+                    () -> openColor.accept(color), globals), controlY);
         } else if (setting instanceof TextSetting text) {
             control = editor(pane, x, width, setting, text.get(), text.maxLength(), text::set);
         } else if (setting instanceof RangeSetting range) {

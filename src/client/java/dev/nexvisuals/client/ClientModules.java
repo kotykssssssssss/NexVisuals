@@ -3,6 +3,10 @@ package dev.nexvisuals.client;
 import dev.nexvisuals.client.cosmetic.*;
 import dev.nexvisuals.client.effect.*;
 import dev.nexvisuals.client.hud.VanillaHudModule;
+import dev.nexvisuals.client.hud.EquipmentHudModule;
+import dev.nexvisuals.client.hud.ItemCounterModule;
+import dev.nexvisuals.client.hud.StatusEffectsHudModule;
+import dev.nexvisuals.client.hud.ActiveModulesHudModule;
 import dev.nexvisuals.client.interfacefx.ContainerVisualsModule;
 import dev.nexvisuals.client.module.*;
 import dev.nexvisuals.client.particle.*;
@@ -45,6 +49,10 @@ public final class ClientModules {
         post.attachEffects(weatherLens,underwater,retroDisplay);
         registry.register(new CustomCrosshairModule());
         registry.register(new HudCoordinatesModule());
+        registry.register(new EquipmentHudModule());
+        registry.register(new ItemCounterModule());
+        registry.register(new StatusEffectsHudModule());
+        registry.register(new ActiveModulesHudModule(registry));
         for (InfoHudModule.Kind kind : InfoHudModule.Kind.values()) registry.register(new InfoHudModule(kind));
         registry.register(new ScreenTintModule());
         for (VanillaHudModule.Element element : VanillaHudModule.Element.values())
