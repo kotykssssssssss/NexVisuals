@@ -36,12 +36,13 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.7.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.7.1-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 Шесть предоставленных пользователем MP3 подготовлены в локальной ignored-папке `.tools/user-sounds`. Для сборки с этими клипами используйте `clean build -PuserSoundResources=.tools/user-sounds`; обычный `clean build` использует vanilla event fallbacks и не включает чужие аудиофайлы. Готовый JAR текущего этапа собран **с клипами**, отдельный resource pack не нужен. Происхождение файлов и подготовка описаны в [Sound Feedback](docs/sound-feedback.md) и [ASSETS](ASSETS.md).
 
 ## Что доступно
 
+- Hotfix 0.7.1: поиск сохраняет keyboard focus и позицию курсора после фильтрации списка и изменения размера окна.
 - Обновление 0.7: **шесть пользовательских Hit Sounds**, настраиваемое приглушение vanilla attack cues, отдельные **Totem Pop Sounds** и **Totem Tracker HUD**. Preview, presets, config/profiles и общий HUD Editor; счётчик отслеживает реальные локальные срабатывания. [Настройки и ручная проверка](docs/sound-feedback.md).
 - Обновление 0.6: **Equipment HUD, Item Counter, Active Visuals, Status Effects HUD**, общая **HSV/RGB/alpha-палитра**, анимации существующего прицела, **Low HP / Damage Pulse** в Screen Edge Tint и **Hearts / Pixels** в Hit Effects. Позиции/scale новых HUD используют прежний редактор. Настройки/профили общие, новых Mixins нет. [Описание и checklist 0.6](docs/hud-customization.md).
 - Набор 0.5 сохранён: **Jump / Landing Rings, Footstep Effects, Totem Echo, Block Interaction FX, Cosmetic Orbitals, Weather Lens, Underwater FX, Retro Display**. Первые пять — частицы в мире с нормальной глубиной; последние три — GPU-pattern/refraction/pixel effects перед HUD. Подробности: [обновление 0.5](docs/new-visuals.md).

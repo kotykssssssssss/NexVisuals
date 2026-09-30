@@ -1,3 +1,26 @@
+# Проверка 0.7.1-dev — hotfix поиска
+
+Причина: vanilla `Screen.rebuildWidgets()` назначает initial focus после `init()`. Прежнее восстановление поиска внутри `init()` перехватывалось этим проходом. Теперь `NexVisualsScreen` восстанавливает focus/cursor после полного native rebuild, только если поиск имел focus до него. Это охватывает фильтрацию и resize; Ctrl+F и обычный click routing сохранены.
+
+Фактически выполнено с JDK 21 и прежними cache/TEMP внутри проекта:
+
+```powershell
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- **BUILD SUCCESSFUL за 46 секунд**, 15 tasks executed, remapJar/check/verifyModJar прошли. Build warnings отсутствуют.
+- **134 tests: 95 core + 39 client; 0 failures/errors/skipped.** Это существующий headless suite, не interactive GUI test.
+- Проверены exact Minecraft **1.21.11**, version 0.7.1-dev и hashes всех шести сохранённых audio clips в JAR. Shader/rendering paths не менялись; повторная shader validation в этом hotfix не требовалась.
+- Minecraft/runClient/computer-use не запускались; commit/push/tag/release не выполнялись.
+
+Production JAR: **`E:\Projects\nexvisuals\build\libs\nexvisuals-0.7.1-dev.jar` — 519274 bytes**; SHA-256 `59005FFA9161FA4065FFA52B622E15CE76ADFE31CF21F10FA03AA9714F94AB0D`. Все шесть пользовательских clips внутри. Нужны Minecraft 1.21.11, Java 21+, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11; sources JAR не устанавливать.
+
+Пользователь проверяет: click в Search → ввод нескольких символов подряд, Backspace, Ctrl+F, редактирование в середине строки, resize с активным поиском и клик по другому control. Фильтр по-прежнему учитывает выбранную категорию; All modules ищет по всему каталогу. Реальное GUI-поведение не объявляется визуально проверенным.
+
+<details>
+<summary>История 0.7.0-dev и предыдущих этапов: старые JAR/числа не относятся к текущему hotfix</summary>
+
 # Проверка 0.7.0-dev — 30 сентября 2026
 
 ## Автоматически проверено
@@ -248,6 +271,8 @@ GLSL: **5 vertex/fragment пар compile/link успешны**, с настоя�
 - Shield opacity, непрерывные mesh ribbons, пользовательские skybox assets, recipes для сторонних shader packs, полноценный curve editor и tooltips reskin отложены. Собственные lightweight presets уже реализованы.
 - Other crosshair replacement mods и modded containers, обходящие `AbstractContainerScreen`/`slotClicked`, отдельно не поддержаны/не проверены. Сохранение vanilla attack indicator использует геометрию vanilla reticle именно 1.21.11.
 - Есть только клиентская косметика локального игрока; синхронизации hats/trails другим игрокам нет.
+
+</details>
 
 </details>
 

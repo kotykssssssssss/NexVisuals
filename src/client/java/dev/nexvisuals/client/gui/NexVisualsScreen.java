@@ -40,7 +40,6 @@ public final class NexVisualsScreen extends Screen {
     private EditBox search;
     private KeybindSetting capturing;
     private boolean rebuildRequested;
-    private boolean restoreSearchFocus;
     private boolean worldPreview;
     private NexButton runtimeInfo;
     private Supplier<String> runtimeInfoLabel;
@@ -100,7 +99,6 @@ public final class NexVisualsScreen extends Screen {
         search.setResponder(value -> {
             state.query = value;
             state.moduleScroll = 0;
-            restoreSearchFocus = true;
             requestRebuild();
         });
         addRenderableWidget(search);
@@ -120,10 +118,16 @@ public final class NexVisualsScreen extends Screen {
         if (layout.categories() != null) buildCategories();
         if (layout.modules() != null) buildModules();
         if (layout.settings() != null) buildSettings();
-        if (restoreSearchFocus) {
-            setInitialFocus(search);
-            search.moveCursorToEnd(false);
-            restoreSearchFocus = false;
+    }
+
+    @Override protected void rebuildWidgets() {
+        boolean refocusSearch = search != null && getFocused() == search;
+        int cursor = refocusSearch ? search.getCursorPosition() : 0;
+        super.rebuildWidgets();
+        // Screen assigns its initial focus after init(), so restore the search only after that pass.
+        if (refocusSearch) {
+            setFocused(search);
+            search.moveCursorTo(cursor, false);
         }
     }
 

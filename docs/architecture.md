@@ -20,6 +20,8 @@
 
 `ModuleAction` — внутренняя Java-команда редактора, например Copy/Mirror hand или Preview sound. Она не сериализуется и не может поступить из файла профиля.
 
+`NexVisualsScreen.rebuildWidgets` сохраняет focus/cursor поискового поля и восстанавливает их **после** native rebuild. Minecraft 1.21.11 вызывает `setInitialFocus()` после `init()`: восстановление только внутри `init()` перехватывалось этим последним проходом, и ввод прекращался после фильтрации. Поле получает focus обратно только если оно имело его до rebuild, поэтому клики по другим controls не переводят ввод в поиск.
+
 `BuiltinProfile` перечисляет три bundled global recipes, которые `ProfileManager.applyBuiltin` загружает через тот же ConfigManager. Путь задаётся только enum, а не текстом пользователя. Catalog tests проверяют, что все module/setting IDs рецептов существуют, и что итоговые конфигурации различны и сохраняются.
 
 `SettingControls` — единая фабрика controls; `NexVisualsScreen` автоматически выводит настройки, selector пресетов и actions. Новому модулю не нужен собственный settings screen. Для цветов есть ARGB-поле, шесть быстрых swatches и общий `ColorPickerScreen`. `core.color.HsvColor`/`ColorPickerModel` выполняют HSV/RGB conversion, сохраняют alpha и выбранный hue на сером/чёрном. Палитра использует стандартные GUI quads и widgets; отдельные textures/framebuffers ей не нужны. Цвет действует в памяти сразу; Cancel восстанавливает значение до открытия. Live Background поддерживает этот экран, сохраняя прежний shader/canvas.
