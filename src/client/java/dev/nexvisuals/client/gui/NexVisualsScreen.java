@@ -44,6 +44,7 @@ public final class NexVisualsScreen extends Screen {
     private NexButton runtimeInfo;
     private Supplier<String> runtimeInfoLabel;
     private String runtimeInfoText;
+    private ChoicePopup choicePopup;
     private final java.util.Map<String, Integer> presetSelections = new java.util.HashMap<>();
 
     public NexVisualsScreen(Screen parent, ModuleRegistry registry, GlobalSettings globals, Runnable save) {
@@ -62,6 +63,7 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override protected void init() {
+        choicePopup=null;
         layout = GuiLayout.of(width, height, state.narrowDetails);
         categoryPane = null;
         modulePane = null;
@@ -224,7 +226,7 @@ public final class NexVisualsScreen extends Screen {
         SettingControls factory = new SettingControls(font, globals, state, this::registerControl,
                 setting -> capturing = setting, color -> minecraft.setScreen(new ColorPickerScreen(this, color, globals, () -> {
                     state.drafts.remove(color); state.invalidDrafts.remove(color); requestRebuild();
-                })), this::requestRebuild);
+                })), this::requestRebuild,this::showChoices);
         int y = 56;
         if (state.globalSettings && ShaderIntegration.available()) {
             NexButton shaders = button(x, 0, settingPane.area.width() - 16, 20,
@@ -244,10 +246,11 @@ public final class NexVisualsScreen extends Screen {
                 y+=19;
                 int index = presetSelections.getOrDefault(module.id(), 0) % module.presets().size();
                 var preset = module.presets().get(index);
-                NexButton choose = button(x, 0, settingPane.area.width() - 73, 20,
-                        () -> preset.name() + " >", () -> false, () -> {
-                            presetSelections.put(module.id(), (index + 1) % module.presets().size()); requestRebuild();
-                        }, "Cycle built-in styles. " + preset.description());
+                NexButton choose = new NexButton(x, 0, settingPane.area.width() - 73, 20,
+                        () -> preset.name() + " v", () -> false, button -> showChoices(button,
+                        module.presets().stream().map(p->new ChoicePopup.Option(p.name(),p.description())).toList(),index,
+                        selectedIndex->presetSelections.put(module.id(),selectedIndex)),globals);
+                choose.setTooltip(Tooltip.create(Component.literal("Choose a built-in style, then Apply. "+preset.description())));
                 NexButton apply = button(x + settingPane.area.width() - 68, 0, 52, 20,
                         () -> "Apply", () -> false, () -> {
                             module.applyPreset(preset);
@@ -266,10 +269,13 @@ public final class NexVisualsScreen extends Screen {
             if(!module.groups().isEmpty()) {
                 int section=state.sections.getOrDefault(module.id(),0)%(module.groups().size()+1);
                 String label=section==module.groups().size()?"All settings":module.groups().get(section).name();
-                NexButton chooseSection=button(x,0,settingPane.area.width()-16,20,()->"Section: "+label+" >",()->false,()->{
-                    state.sections.put(module.id(),(section+1)%(module.groups().size()+1));
-                    state.settingScroll=0; requestRebuild();
-                },"Choose a settings section; reset and module presets still affect the whole module.");
+                var sections=new java.util.ArrayList<ChoicePopup.Option>();
+                module.groups().forEach(g->sections.add(new ChoicePopup.Option(g.name(),"Show this settings section")));
+                sections.add(new ChoicePopup.Option("All settings","Show every setting of this module"));
+                NexButton chooseSection=new NexButton(x,0,settingPane.area.width()-16,20,()->"Section: "+label+" v",()->false,
+                        button->showChoices(button,sections,section,selectedIndex->{
+                            state.sections.put(module.id(),selectedIndex);state.settingScroll=0;
+                        }),globals);
                 addWidget(chooseSection); settingPane.add(chooseSection,y); y+=24;
                 if(section<module.groups().size()) settings=module.groups().get(section).settings();
             }
@@ -278,6 +284,12 @@ public final class NexVisualsScreen extends Screen {
     }
 
     private void registerControl(AbstractWidget widget) { addWidget(widget); }
+    private void showChoices(AbstractWidget anchor,List<ChoicePopup.Option> options,int selected,java.util.function.IntConsumer choose) {
+        if(options.isEmpty()) return;
+        choicePopup=new ChoicePopup(anchor,width,height,options,selected,index->{
+            choicePopup=null;choose.accept(index);requestRebuild();
+        },()->{choicePopup=null;setFocused(anchor);},globals);
+    }
     private void requestRebuild() { rebuildRequested = true; }
     private void rememberScroll() {
         if (modulePane != null) state.moduleScroll = modulePane.scroll();
@@ -333,6 +345,7 @@ public final class NexVisualsScreen extends Screen {
                 : state.invalidDrafts.isEmpty() ? "Live preview / saved on close" : "Red input invalid / last valid value kept";
         Draw.text(graphics, font, font.plainSubstrByWidth(status, layout.width() - 164),
                 layout.left() + 10, layout.footerY() + 6, capturing == null ? 0xFF8796B2 : globals.accentColor.get(), false);
+        if(choicePopup!=null) choicePopup.render(graphics,mouseX,mouseY,delta);
     }
 
     @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) { }
@@ -342,6 +355,7 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if(choicePopup!=null) return choicePopup.scroll(vertical);
         if (worldPreview) return true;
         for (ScrollPane pane : new ScrollPane[] { categoryPane, modulePane, settingPane }) {
             if (pane != null && pane.area.contains(mouseX, mouseY)) {
@@ -354,6 +368,7 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if(choicePopup!=null) return choicePopup.mouseClicked(event,doubleClick);
         if (worldPreview) return true;
         if (capturing != null) {
             capturing.set(InputConstants.Type.MOUSE.getOrCreate(event.button()).getName());
@@ -364,14 +379,23 @@ public final class NexVisualsScreen extends Screen {
     }
 
     @Override public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        return worldPreview || super.mouseDragged(event, deltaX, deltaY);
+        return choicePopup!=null || worldPreview || super.mouseDragged(event, deltaX, deltaY);
+    }
+
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        return choicePopup!=null || worldPreview || super.mouseReleased(event);
     }
 
     @Override public boolean charTyped(CharacterEvent event) {
-        return worldPreview || super.charTyped(event);
+        return choicePopup!=null || worldPreview || super.charTyped(event);
+    }
+
+    @Override public boolean keyReleased(KeyEvent event) {
+        return choicePopup!=null || worldPreview || super.keyReleased(event);
     }
 
     @Override public boolean keyPressed(KeyEvent event) {
+        if(choicePopup!=null) return choicePopup.keyPressed(event);
         if (worldPreview) {
             if (event.key() == GLFW.GLFW_KEY_ESCAPE || event.key() == GLFW.GLFW_KEY_F4) worldPreview = false;
             return true;

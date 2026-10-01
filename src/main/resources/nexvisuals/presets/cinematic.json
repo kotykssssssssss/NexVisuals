@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "global": {"accent_color": "#FFE3BB8A", "animation_duration": 240, "panel_opacity": 0.86},
   "modules": {
-    "viewmodel": {"enabled": true, "settings": {"main_x": 0.2, "main_yaw": -28, "main_roll": 12, "main_scale": 1.12}},
+    "viewmodel": {"enabled": true, "settings": {"separate_offhand": true, "mirror_layout": true, "main_x": -0.18, "main_y": 0.08, "main_z": -0.24, "main_pitch": -2, "main_yaw": -4, "main_roll": 3, "main_scale": 1.04, "off_x": 0.18, "off_y": 0.08, "off_z": -0.24, "off_pitch": -2, "off_yaw": 4, "off_roll": -3, "off_scale": 1.04}},
     "swing": {"enabled": true, "settings": {"style": "SMOOTH", "duration": 420, "amplitude": 0.7}},
     "camera": {"enabled": true, "settings": {"fov_offset": -6, "bobbing_intensity": 0.35, "hurt_intensity": 0.65, "smoothing": 300}},
     "hit_visuals": {"enabled": true, "settings": {"preset": "RINGS", "primary": "#DDECCB91", "secondary": "#99C18396", "lifetime": 25, "marker": false, "size": 1.2}},

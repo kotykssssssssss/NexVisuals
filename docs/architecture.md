@@ -133,10 +133,12 @@ Opening Scale/Slide/Fade относится к декоративной рамк
 
 | Адаптер | Узкая ответственность |
 | --- | --- |
-| `ItemInHandRendererMixin` | Трансформация внутри pushed hand matrix; замена только обычного `swingArm` |
+| `ItemInHandRendererMixin` | Viewmodel/Shield в pushed hand matrix, обычный `swingArm`, scoped original held model submit для Weapon Trails |
+| `LocalPlayerSwingMixin` | Наблюдает принятый vanilla local swing в RETURN; запускает только cosmetic clocks/history, не меняет player state/packets |
+| `ItemModelTrailMixin` | Пассивно пробует первый item layer после ItemTransform.apply в scoped local weapon submit |
 | `GameRendererMixin` | Коэффициенты vanilla bob/hurt, FOV-поправка и optional world-image pass перед HUD |
 | `ScreenMixin` | Цвет/fade in-world backdrop и opt-in wallpaper только PauseScreen |
-| `ScreenEffectRendererMixin` | Только first-person fire quads: матрица, alpha, видимость |
+| `ScreenEffectRendererMixin` | Fire quads и только pushed pose настоящего local totem activation model |
 | `SkyRendererMixin` | Legacy palette / procedural dome / custom stars и celestial transforms, без замены world renderer |
 | `FogRendererMixin` | Matching clear/fog color и только дополнительная density обычного air fog |
 | `ContainerScreenMixin` | Декорация стандартных контейнеров и наблюдение локального click |
@@ -147,9 +149,19 @@ Opening Scale/Slide/Fade относится к декоративной рамк
 
 `defaultRequire: 1` не маскирует пропавшие точки инъекции. `MixinContractTest` проверяет target methods, captured descriptors, shadow fields и INVOKE sites по байткоду фактического Minecraft 1.21.11. Это не полноценный запуск Mixin transformer и не проверка совместимости с другими модами.
 
+## Ribbon extraction, Weapon Trails и Totem Motion
+
+`TrailHistory` — core ring buffer точек или пар краёв: лимиты capacity/lifetime/path length, разрывы при телепорте и смене времени. `RibbonMesh` формирует immutable primitive-array snapshot со сглаженными camera-facing полосами и мягкими alpha edges. Player Trails хранит 64 samples; Fabric END_EXTRACTION прикрепляет mesh через RenderStateDataKey, AFTER_ENTITIES читает только snapshot и передаёт colored quads штатному MultiBufferSource. Draw не читает player/world/config. Particle styles сохраняют общий EffectEmitter. В Fabric rendering-v1 16.2.10 BEFORE_DEBUG_RENDER вызывается во время extraction, до renderContext.prepare: первый context пуст, позднее может быть stale. AFTER_ENTITIES выполняется в подготовленном main pass. Hooks дополнительно проверяют nullable state/matrices/consumers; OFF не читает draw context.
+
+Weapon Trails сохраняет максимум 48 пар краёв на руку, не чаще 100 Hz, только во время местного swing. Узкий WrapOperation вокруг ItemInHandRenderer.renderItem устанавливает local weapon scope и всегда вызывает original/finally. ItemModelTrailMixin получает pose после actual ItemTransform.apply первого item layer; Viewmodel/Swing/resource-pack display transforms уже учтены. AUTO сохраняет edited legacy hand probes; MODEL использует верхнюю диагональ модели с Coverage. WeaponSweep разрывает историю между swing и скачками, RibbonMesh сглаживает probes без выхода за соседние границы. Mesh в camera space поступает в SubmitNodeCollector с identity pose. Iris active-pack guard приостанавливает новые геометрические modes; runtime compatibility пока не проверена.
+
+TotemMotion — чистая функция от vanilla 40-tick progress. Totem Animation применяет pose перед существующим lighting/model submit внутри native push/pop; event, timer, sound и particles не изменяются. Нет нового renderer/mixin class или GPU resource lifetime.
+
+ChoicePopup — модальный список внутри текущего editor, с ScrollPane и прежними NexButton. Он получает приоритет mouse/keyboard input, рисуется после controls на следующем GUI stratum и закрывается при rebuild/resize. SettingControls генерирует enum choices; editor использует тот же список для presets/sections. Apply по-прежнему отделён от выбора module preset. Focus/cursor search hotfix сохранён.
+
 ## Анимации и ограничения нагрузки
 
-`Transition`, `Smoothing`, `EffectMath` и `SwingTimeline` — маленькие тестируемые компоненты. GUI/swing используют монотонное время; particle simulation — ticks Minecraft с интерполяцией размера при рендере. Visual swing duration не записывает состояние атаки/cooldown.
+`Transition`, `Smoothing`, `EffectMath`, `SwingTimeline` и `SwingMotion` — маленькие тестируемые компоненты. SwingTimeline запускается только от принятого local vanilla swing, дубликаты tick не перезапускают его. SwingMotion переиспользует mutable pose на руку и отпускает carry предыдущего движения за 65 ms; render не обнаруживает новые cycles по vanilla progress. Контекст сбрасывается при смене player/world/item/arm/style и использовании предмета. GUI/swing используют монотонное время; particle simulation — ticks Minecraft с интерполяцией размера при рендере. Visual swing duration не записывает состояние атаки/cooldown.
 
 - Общий emitter: 128 submissions/tick, 48 при Decreased; Minimal отключает эффекты.
 - Новые частицы: `ParticleLimit(768)`; lifetime максимум 60 ticks. Legacy Classic имеет отдельный cap 256.
@@ -182,3 +194,7 @@ public final class ExampleModule extends VisualModule {
 3. При необходимости подключить один поддерживаемый Fabric hook в bootstrap; проверять `enabled()`.
 4. Чистую логику вынести в `core` и проверить unit tests; реальные definitions/presets уже охватывает catalog test.
 5. GUI и config обнаружат настройки автоматически. Не добавлять индивидуальные branches для нового модуля в GUI.
+
+## Viewmodel presets в 0.9
+
+Viewmodel.apply получает Minecraft main arm из прежнего ItemInHandRenderer adapter. Новый mirror_layout (default false) опционально меняет знак X/yaw/roll для леворукого layout; прочие пользовательские числа и порядок transforms не меняются. PvP/Cinematic включают этот флаг и independent offhand; остальные preset recipes сохранены. Глобальный cinematic.json повторяет исправленный module recipe, соответствие проверяется headless тестом. ViewmodelPresetTest использует actual Minecraft 1.21.11 handheld.json / ItemTransform, vanilla rest hand placement и perspective clip coordinates; обнаруживает оба старых off-screen recipes и проверяет новые на нескольких projections. GPU/window/registries не запускаются.

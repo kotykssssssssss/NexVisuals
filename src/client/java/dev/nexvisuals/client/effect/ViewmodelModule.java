@@ -7,10 +7,12 @@ import dev.nexvisuals.core.module.VisualModule;
 import dev.nexvisuals.core.setting.BooleanSetting;
 import dev.nexvisuals.core.setting.DoubleSetting;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
 
 /** Transforms only the renderer's pushed hand matrix, never player/entity/gameplay state. */
 public final class ViewmodelModule extends VisualModule {
     private final BooleanSetting separate = add(new BooleanSetting("separate_offhand", "Separate off hand", "Use independent transforms for the off hand.", false));
+    private final BooleanSetting mirrorLayout = add(new BooleanSetting("mirror_layout", "Mirror left-handed layout", "Mirror X, yaw and roll when Minecraft's main arm is Left. Old custom layouts keep their absolute transforms by default.", false));
     private final HandSettings main = new HandSettings("main", "Main hand");
     private final HandSettings off = new HandSettings("off", "Off hand");
     public ViewmodelModule() {
@@ -19,8 +21,15 @@ public final class ViewmodelModule extends VisualModule {
         preset("Compact", "Smaller hands with a slight outward tilt.", "main_scale", .78, "main_y", -.12, "main_roll", -8);
         preset("Low", "Lower the item while keeping its size.", "main_y", -.3, "main_z", -.12, "main_pitch", 8);
         preset("Centered", "Bring the main hand toward the middle.", "main_x", -.32, "main_y", .08, "main_yaw", 18, "main_scale", .9);
-        preset("PvP", "A compact, angled weapon silhouette.", "main_x", .12, "main_y", -.18, "main_pitch", -15, "main_roll", -22, "main_scale", .85);
-        preset("Cinematic", "A larger side-on presentation.", "main_x", .2, "main_yaw", -28, "main_roll", 12, "main_scale", 1.12);
+        // This transform precedes vanilla hand placement: strong rotations also move the grip off screen.
+        preset("PvP", "Compact, readable hands with a slight inward angle.",
+                "separate_offhand", true, "mirror_layout", true,
+                "main_x", -.08, "main_y", .06, "main_z", -.22, "main_pitch", -2, "main_yaw", 2, "main_roll", -5, "main_scale", .88,
+                "off_x", .08, "off_y", .06, "off_z", -.22, "off_pitch", -2, "off_yaw", -2, "off_roll", 5, "off_scale", .88);
+        preset("Cinematic", "A gently angled presentation with both hands kept in frame.",
+                "separate_offhand", true, "mirror_layout", true,
+                "main_x", -.18, "main_y", .08, "main_z", -.24, "main_pitch", -2, "main_yaw", -4, "main_roll", 3, "main_scale", 1.04,
+                "off_x", .18, "off_y", .08, "off_z", -.24, "off_pitch", -2, "off_yaw", 4, "off_roll", -3, "off_scale", 1.04);
         action("Copy main to off hand", "Copy all main-hand transforms and enable independent off hand.", () -> copy(false));
         action("Mirror main to off hand", "Copy transforms, reversing X, yaw and roll.", () -> copy(true));
     }
@@ -35,13 +44,14 @@ public final class ViewmodelModule extends VisualModule {
         }
         separate.set(true);
     }
-    public void apply(PoseStack pose, InteractionHand hand) {
+    public void apply(PoseStack pose, InteractionHand hand, HumanoidArm mainArm) {
         if (!enabled()) return;
         HandSettings settings = hand == InteractionHand.OFF_HAND && separate.get() ? off : main;
-        pose.translate(settings.x.get(), settings.y.get(), settings.z.get());
+        int side = mirrorLayout.get() && mainArm == HumanoidArm.LEFT ? -1 : 1;
+        pose.translate(side * settings.x.get(), settings.y.get(), settings.z.get());
         pose.mulPose(Axis.XP.rotationDegrees(settings.pitch.get().floatValue()));
-        pose.mulPose(Axis.YP.rotationDegrees(settings.yaw.get().floatValue()));
-        pose.mulPose(Axis.ZP.rotationDegrees(settings.roll.get().floatValue()));
+        pose.mulPose(Axis.YP.rotationDegrees(side * settings.yaw.get().floatValue()));
+        pose.mulPose(Axis.ZP.rotationDegrees(side * settings.roll.get().floatValue()));
         float scale = settings.scale.get().floatValue();
         pose.scale(scale * settings.sx.get().floatValue(), scale * settings.sy.get().floatValue(), scale * settings.sz.get().floatValue());
     }

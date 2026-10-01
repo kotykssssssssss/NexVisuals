@@ -1,4 +1,149 @@
-# Проверка 0.7.1-dev — hotfix поиска
+# Предрелиз 0.9.0-dev — 1 октября 2026
+
+Исправлены module presets **Viewmodel PvP / Cinematic** и встроенный global Cinematic profile. Старые большие углы вращали vanilla hand placement вместе с предметом и выводили его за край кадра. Новые рецепты используют inward offsets, мягкие углы, небольшую дополнительную глубину и отдельную offhand. Opt-in `mirror_layout` зеркалит X/yaw/roll обеих рук при Left main arm; default false сохраняет прежнюю семантику ручных layouts. Другие Viewmodel presets, статичный transform pipeline и уже исправленные Swing/Trails не переписаны.
+
+## Выполненные проверки
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME=Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP=Join-Path (Get-Location) '.tools\tmp'
+$env:TMP=$env:TEMP
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- **BUILD SUCCESSFUL — 35 s**, 15 tasks executed, без warnings в итоговом output. Выполнены Java/client compile, full test/clientTest, remapJar/remapSourcesJar, check и verifyModJar. Ignored log: `.tools/validation-0.9-build.log`.
+- **172 tests: 118 core + 54 headless client; failures/errors/skipped = 0.** Прежние checks сохранены.
+- ViewmodelPresetTest использует actual **Minecraft 1.21.11 handheld.json**, ItemTransform, native rest grip и perspective projection. Для обоих новых presets/main+offhand/Left+Right main arm/FOV 55,64,70,85/aspect 4:3,16:9,21:9 минимум 5 из 9 диагональных blade probes находятся внутри clip rectangle с 5% запасом. Оба старых рецепта ловятся этим regression check. Это не тест реальной модели руки/GPU/swing/equip/use или произвольного resource pack.
+- Отдельно проверены opt-in mirror/default compatibility, соответствие module/global Cinematic recipes, config и profiles save/load/restart обоих исправленных presets. Mixin bytecode contracts остаются точными для 1.21.11; новых Mixin classes в этом этапе нет.
+- Production metadata реально прочитаны: `0.9.0-dev`, client-only, Minecraft `=1.21.11`. verifyModJar проверил Mixins/прежние resources/test-class exclusion. Все **6 OGG + user-audio manifest** byte-for-byte совпадают с local resources. Артефакт JSON: ignored `.tools/validation-0.9-artifact.json`.
+- `git diff --check` и whitespace-check новых untracked text files — PASS. GLSL в этом этапе не менялся.
+
+Промежуточный projection test первой правки выявил ещё off-screen case: Left main arm, FOV 55, aspect 4:3. Исправлены положение/глубина и опциональное зеркалирование physical layout; требование минимум 5 видимых probes не ослаблялось. Итоговый clean suite полностью прошёл.
+
+## Production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.9.0-dev.jar` — 562498 bytes.**
+
+SHA-256: `EBC64516ECC11BD43801CF37AEA56F4DE8ADDEE1544F5650319A8A639B8967BB`.
+
+Production/remapped JAR с прежними пользовательскими звуками. Minecraft строго **1.21.11**, Java 21+, Loader >=0.19.5, Fabric API >=0.141.6+1.21.11. Других обязательных dependencies нет. Sources JAR не устанавливать; старый NexVisuals JAR удалить из mods перед заменой.
+
+## Проверить вручную
+
+После установки выбрать **Viewmodel → PvP / Cinematic → Apply**. Конфиг не удалять: старые пользовательские числа не переписываются автоматически. Сохранённый пользовательский профиль при необходимости обновить после Apply; встроенный global Cinematic уже исправлен.
+
+Проверить main/offhand с мечом/топором/щитом и пустую руку; Right/Left main arm; swing и использование предметов, совместно с Weapon Trails/Mini Shield; Reset/Vanilla/другие presets; общий Cinematic profile, свои profiles и restart. Произвольные resource-pack models и крайние ручные offsets/scale не гарантированно остаются в кадре. Внешний вид, FPS и runtime Sodium/Iris compatibility оставлены пользователю.
+
+Minecraft/runClient/computer-use не запускались. Это предрелизная сборка v0.9, не опубликованный релиз. Commit/push/tag/release не выполнялись.
+
+---
+
+# Проверка 0.8.2-dev — 1 октября 2026
+
+## Item Swing и Weapon Trails
+
+Исправлено существующее воспроизведение Item Swing: рендер больше не выводит начало цикла из interpolated vanilla progress. Пассивный RETURN observer LocalPlayer.swing передаёт только принятые vanilla starts, clock дедуплицирует tick, отдельные руки независимы. Быстрый повтор переносит текущую позу с 65 ms carry. Presets получили balanced duration/peak/easing. Weapon Trails пробует первый item layer после actual display transform, сохраняет edited legacy probes, разрывает историю между swing и discontinuities, добавляет bounded smoothing/Coverage/near-plane guard. Старый Player Trails crash fix сохранён. [Настройки, архитектура и ручной checklist](swing-and-weapon-trails.md).
+
+## Фактически выполнено
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME=Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP=Join-Path (Get-Location) '.tools\tmp'
+$env:TMP=$env:TEMP
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- **BUILD SUCCESSFUL — 42 s**, 15 tasks executed. Java/client compile, remapJar, remapSourcesJar, test, clientTest, check и verifyModJar завершены. Build warnings в итоговом output нет. Лог: ignored `.tools/validation-0.8.2-build.log`.
+- **168 tests: 118 core + 50 headless client; failures/errors/skipped = 0.** Проверены single-event playback всех Swing presets, neutral endpoint, per-hand clocks, duplicate ticks, FPS-independent pose, smooth retrigger, OFF/native restoration, mesh bounds/expiry/rate/near plane, config/profiles/legacy alignment.
+- Mixin contracts сверены по Minecraft **1.21.11**: оба renderItem call sites, actual ItemTransform.apply site, captured args и WrapOperation receiver/args/Operation. Local swing observer стоит в RETURN и не пишет player fields/не отменяет native method. Это bytecode checks, не live Mixin transformation.
+- Production JAR реально существует, remapped, `environment: client`, `minecraft: =1.21.11`; новые observer/model-probe/motion/history classes присутствуют. verifyModJar проверил declared Mixins, прежние shader/mask/profile resources и отсутствие test classes. Byte-for-byte все **6 пользовательских OGG + audio manifest** совпали с ignored local resources; клипы сохранены.
+- `git diff --check` — PASS. Дополнительная whitespace-проверка новых untracked text files — PASS. GLSL не менялся; новых shaders/GPU resources в этом исправлении нет.
+
+Промежуточные проверки были исправлены и повторены: strict equality различал +0.0/-0.0 для нулевой amplitude и idle matrix; zero-strength/idle теперь обходят лишние transforms. В mesh-budget fixture distance threshold отбрасывал одну почти стационарную точку; fixture для максимального budget теперь явно сохраняет все 48 samples. Итоговый clean suite полностью прошёл; провалившиеся промежуточные проверки не скрыты.
+
+## Готовый production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.8.2-dev.jar` — 561955 bytes.**
+
+SHA-256: `DA36854D3DECA5C00ADDFDB305C625B008C6C444F783F3FE949D5F416ECB40E5`.
+
+Minecraft **1.21.11**, Java 21+, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11. Других обязательных библиотек нет. Это production/remapped JAR с прежними клипами; sources JAR не устанавливать. Уберите старый NexVisuals JAR перед заменой.
+
+Minecraft/runClient/computer-use не запускались. Внешний вид swing, выравнивание trails по произвольным моделям, GPU drawing и runtime Sodium/Iris compatibility пользователь проверяет сам: каждый preset одним кликом в воздухе/по сущности, rapid clicks и held mining; Viewmodel/left arm/offhand; Coverage/Smoothness/legacy probes; idle/OFF/item switch; Reset/profiles/restart. Исходники/тесты не подтверждают visual QA. Commit/push/tag/release не выполнялись.
+
+---
+
+# Hotfix 0.8.1-dev — first-frame crash Player Trails
+
+Пользователь подтвердил runtime crash `PlayerTrailsModule.lambda$registerRendering$1`: `WorldRenderContext.worldState()` оказался null. Предыдущие headless tests не проверяли lifecycle этого Fabric event; успешная сборка 0.8.0 не подтвердила runtime rendering.
+
+Исследован фактический source JAR Fabric rendering-v1 **16.2.10+0290ad933e**: `LevelRendererMixin.beforeDebugRender` вызывает BEFORE_DEBUG_RENDER из `renderLevel` во время extraction. Подготовка `WorldRenderContextImpl` и его PoseStack происходит позже, внутри main draw pass. Поэтому первый callback имеет пустой context, а последующие могут читать прошлый кадр.
+
+Ribbon draw перенесён в **AFTER_ENTITIES**, который вызывается в подготовленном main pass. Добавлены guards для отсутствующих worldState/matrices/consumers, camera state и extraction state. OFF/particle modes не читают draw context. Модули/пресеты/config не удалены, зависимости и target Minecraft **1.21.11** не изменены.
+
+Команды с JDK 21/cache/TEMP внутри NexVisuals:
+
+```powershell
+.\gradlew.bat clientTest --tests '*PlayerTrailsRenderTest' --offline --console=plain '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- Четыре новых regression checks прошли: реальный пустой Fabric draw context с включённым Ribbon, пустая extraction, отсутствие context access для OFF/particle styles и корректная draw-event registration.
+- **Clean build успешна за 42 секунды**, 15 tasks executed; remapJar/check/verifyModJar, без warnings.
+- **153 tests: 107 core + 46 client; 0 failures/errors/skipped**. Неудачных compilation/tests этого hotfix не было.
+- Production metadata: client-only, Minecraft `=1.21.11`, версия 0.8.1-dev. Hashes всех шести OGG и manifest совпадают с прежними local resources. Test classes не входят в мод. `git diff --check` и whitespace новых text files проверены.
+
+**Production JAR: `E:\Projects\nexvisuals\build\libs\nexvisuals-0.8.1-dev.jar` — 550219 bytes.** SHA-256: `4905D79EB97EB7DD707A386FEDE283679693A0A9496992C4BB81C31F16CF55C7`. Требования прежние: Minecraft 1.21.11, Java 21+, Loader >=0.19.5 и Fabric API >=0.141.6+1.21.11, других обязательных библиотек нет.
+
+Minecraft/runClient/computer-use не запускались. Пользователю проверить вход в мир с Trails OFF, затем Ribbon/Twin Flow/Light Line в третьем лице, смену мира и возврат в меню. Проверить старые particle modes и optional Sodium/Iris. Удалять config не нужно; заменить старый NexVisuals JAR новым. GPU output/runtime compatibility после hotfix пока не подтверждены. Лог clean build: ignored `.tools/validation-0.8.1-build.log`. Commit/push/tag/release не выполнялись.
+
+---
+
+# Проверка 0.8.0-dev — 1 октября 2026 (история)
+
+В начале этапа рабочее дерево было чистым: сохранён `0.7.1-dev` с исправлением поиска и шестью пользовательскими звуками. Расширены существующие module/settings/config/GUI/rendering systems; новый проект или параллельный framework не создавался.
+
+## Автоматически проверено
+
+Стек неизменен: **Minecraft 1.21.11**, Java 21 (Oracle 21.0.9), Loader 0.19.5, Fabric API 0.141.6+1.21.11, Loom 1.14.10, Mojang official mappings 1.21.11, Wrapper 9.2.1. Cache/TEMP внутри NexVisuals.
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME = Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP = Join-Path (Get-Location) '.tools\tmp'
+$env:TMP = $env:TEMP
+.\gradlew.bat test clientTest --offline '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- Финальная **clean build успешна за 32 секунды**, 15 tasks executed; remapJar/check/verifyModJar прошли, warnings отсутствуют.
+- **149 tests: 107 core + 42 client; 0 failures/errors/skipped**. Добавлены 15 focused tests для ring-buffer wrapping/expiry/teleport/invalid limits/path length, mesh budgets/alpha/camera precision, blade geometry, deterministic totem poses, non-mutating swing activity, реальных новых settings/presets/config/profiles/legacy defaults/clamping. Прежние catalog/duplicate/config/corruption/HUD/sound/sky/post checks сохранены.
+- Mixin bytecode contracts проверяют новые captured descriptors, shadow fields и обе renderItem sites при `require=2` по фактическому Minecraft 1.21.11. Новых Mixin classes нет: два узких hooks добавлены в существующие adapters. Это не live Mixin transformation.
+- Production JAR проверен отдельно: exact `=1.21.11`, client-only entrypoint, новые trail/totem/dropdown/core classes, прежние shader/mask/profile resources. Hashes всех шести OGG и manifest совпали с ignored local resources. MP3/test classes не входят в JAR.
+- Новые trails используют штатный `RenderTypes.debugQuads`: alpha blending, sorted quads, depth test без depth writes, без собственного shader/framebuffer. Собственные GLSL sources не менялись; новая GLSL validation в этом этапе не требовалась.
+- `git diff --check` и отдельная проверка новых untracked text files на whitespace выполнены после документации. Все изменения остаются в NexVisuals, без commit/push/tag/release.
+
+Промежуточные ошибки исправлены: некавыченный `-PuserSoundResources` в PowerShell передал пустое значение — команда повторена с кавычками; тест fade ошибочно сравнивал alpha с прозрачным внешним краем — выбран внутренний vertex; в двух clamping tests использовались int literals вместо Double — исправлены на `100.0`/`-100.0`. Финальный полный suite прошёл. Ни одна оставшаяся ошибка не игнорируется.
+
+## Production JAR и ручные ограничения
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.8.0-dev.jar` — 550069 bytes.** SHA-256: `49F85101D62A6D09647AD1E6AF675D0899DA3E755B8CCD700CD807A8E6C87010`.
+
+Production/remapped мод **с прежними шестью пользовательскими клипами**. `-sources.jar` не устанавливать. Требуются Minecraft **1.21.11**, Java 21+, Fabric Loader >=0.19.5 и Fabric API >=0.141.6+1.21.11. Других обязательных зависимостей нет. Sodium/Iris optional, устанавливаются отдельно; runtime compatibility не подтверждена.
+
+**Minecraft/runClient/computer-use не запускались.** Не проверены GPU output, trail alignment/transparency, actual totem pose, interactive dropdown/keyboard/narration, FPS, reload и Sodium/Iris. Blade alignment для custom models регулируется пользователем; true totem opacity не реализована. Активный Iris pack консервативно приостанавливает geometry trails, не старые particle modes. Старые Fire/Shield, Skybox/Live Background, sounds, search и config IDs сохранены.
+
+[Настройки, архитектура и конкретный manual checklist 0.8](trails-and-totem.md). Отчёты suite — `build/reports/tests/test/index.html`, `build/reports/tests/clientTest/index.html`; final build output — ignored `.tools/validation-0.8-build.log`.
+
+---
+
+# Проверка 0.7.1-dev — hotfix поиска (история)
 
 Причина: vanilla `Screen.rebuildWidgets()` назначает initial focus после `init()`. Прежнее восстановление поиска внутри `init()` перехватывалось этим проходом. Теперь `NexVisualsScreen` восстанавливает focus/cursor после полного native rebuild, только если поиск имел focus до него. Это охватывает фильтрацию и resize; Ctrl+F и обычный click routing сохранены.
 

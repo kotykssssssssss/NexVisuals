@@ -76,11 +76,37 @@ class MixinContractTest {
                                     && invocation.equals("L"+call.owner+";"+call.name+call.desc)) count++;
                             Object ordinalValue = value(at,"ordinal"); int ordinal = ordinalValue instanceof Integer n ? n : -1;
                             assertTrue(count > Math.max(0,ordinal), handler.name+" missing invocation "+invocation);
+                            Object required=value(injection,"require");
+                            if(ordinal<0 && required instanceof Integer minimum)
+                                assertTrue(count>=minimum,handler.name+" requires "+minimum+" invocation sites, found "+count);
+                            if(injection.desc.endsWith("/WrapOperation;")) {
+                                var call=Arrays.stream(method.instructions.toArray()).filter(n->n instanceof MethodInsnNode c
+                                        && invocation.equals("L"+c.owner+";"+c.name+c.desc)).map(n->(MethodInsnNode)n).findFirst().orElseThrow();
+                                var expected=new ArrayList<Type>();
+                                if(call.getOpcode()!=Opcodes.INVOKESTATIC) expected.add(Type.getObjectType(call.owner));
+                                expected.addAll(Arrays.asList(Type.getArgumentTypes(call.desc)));
+                                expected.add(Type.getObjectType("com/llamalad7/mixinextras/injector/wrapoperation/Operation"));
+                                assertEquals(expected,Arrays.asList(Type.getArgumentTypes(handler.desc)),handler.name+" wrapped receiver/arguments/operation");
+                            }
                         }
                     }
                 }
             }
             assertTrue(injectionCount >= 12, "Expected all declared adapters to be inspected");
         }
+    }
+    @Test void localSwingObservationRunsAfterNativeAcceptanceAndDoesNotCancelIt() throws Exception {
+        var nativeClass=read("net/minecraft/client/player/LocalPlayer");
+        var swing=nativeClass.methods.stream().filter(m->m.name.equals("swing")).findFirst().orElseThrow();
+        var calls=Arrays.stream(swing.instructions.toArray()).filter(n->n instanceof MethodInsnNode).map(n->(MethodInsnNode)n).toList();
+        assertEquals("swing",calls.getFirst().name,"vanilla decides whether the attempt starts an animation first");
+        var mixin=read("dev/nexvisuals/client/mixin/LocalPlayerSwingMixin");
+        var handler=mixin.methods.stream().filter(m->m.name.equals("nexvisuals$started")).findFirst().orElseThrow();
+        var injection=annotations(handler.visibleAnnotations,handler.invisibleAnnotations).stream().filter(a->a.desc.endsWith("/Inject;")).findFirst().orElseThrow();
+        var at=(AnnotationNode)((List<?>)value(injection,"at")).getFirst();
+        assertEquals("RETURN",value(at,"value"));assertNotEquals(Boolean.TRUE,value(injection,"cancellable"));
+        var fields=Arrays.stream(handler.instructions.toArray()).filter(n->n instanceof FieldInsnNode).map(n->((FieldInsnNode)n).name).toList();
+        assertTrue(fields.containsAll(List.of("swinging","swingTime","swingingArm")));
+        assertFalse(Arrays.stream(handler.instructions.toArray()).anyMatch(n->n instanceof FieldInsnNode f && f.getOpcode()==Opcodes.PUTFIELD),"observer must not write any player state");
     }
 }

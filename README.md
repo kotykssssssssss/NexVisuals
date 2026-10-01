@@ -36,11 +36,19 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.7.1-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт: `build/libs/nexvisuals-0.9.0-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 Шесть предоставленных пользователем MP3 подготовлены в локальной ignored-папке `.tools/user-sounds`. Для сборки с этими клипами используйте `clean build -PuserSoundResources=.tools/user-sounds`; обычный `clean build` использует vanilla event fallbacks и не включает чужие аудиофайлы. Готовый JAR текущего этапа собран **с клипами**, отдельный resource pack не нужен. Происхождение файлов и подготовка описаны в [Sound Feedback](docs/sound-feedback.md) и [ASSETS](ASSETS.md).
 
 ## Что доступно
+
+- Предрелиз **0.9**: исправлены Viewmodel **PvP / Cinematic** и общий Cinematic profile. Мягкие углы, положение в кадре, независимая offhand и опциональное зеркалирование при Left main arm. После обновления выберите preset и нажмите **Apply**; старый config и свои profiles не перезаписываются. Остальные пресеты сохранены.
+
+- Обновление 0.8.2: **Item Swing** запускается от принятого local swing, со сглаженным повтором и новыми duration/peak recipes. **Weapon Trails** учитывает actual item display transform, разрывает ленту между ударами и получает Coverage/Smoothness. Прежние вручную изменённые probes сохраняют legacy alignment. [Настройки и ручная проверка](docs/swing-and-weapon-trails.md).
+
+- Hotfix 0.8.1: исправлен first-frame crash Player Trails. Ribbon drawing перенесён из преждевременного BEFORE_DEBUG_RENDER в подготовленный AFTER_ENTITIES; пустые context/state/matrices/buffers безопасно пропускаются. Trails сохранены.
+
+- Обновление 0.8: **геометрические Ribbon / Twin Flow / Light Line** в Player Trails, **Weapon Trails**, **Totem Animation** и раскрывающиеся списки presets/sections/enum. Старые particle modes, поиск, sounds и profiles сохранены. [Настройки, лимиты и ручная проверка](docs/trails-and-totem.md).
 
 - Hotfix 0.7.1: поиск сохраняет keyboard focus и позицию курсора после фильтрации списка и изменения размера окна.
 - Обновление 0.7: **шесть пользовательских Hit Sounds**, настраиваемое приглушение vanilla attack cues, отдельные **Totem Pop Sounds** и **Totem Tracker HUD**. Preview, presets, config/profiles и общий HUD Editor; счётчик отслеживает реальные локальные срабатывания. [Настройки и ручная проверка](docs/sound-feedback.md).

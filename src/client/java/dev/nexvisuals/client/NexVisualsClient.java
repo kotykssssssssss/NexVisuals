@@ -49,6 +49,8 @@ public final class NexVisualsClient implements ClientModInitializer {
     public ConsoleMenuModule consoleMenu() { return catalog.consoleMenu; }
     public dev.nexvisuals.client.background.LiveBackgroundModule liveBackground() { return catalog.liveBackground; }
     public SwingModule swing() { return catalog.swing; }
+    public dev.nexvisuals.client.cosmetic.WeaponTrailsModule weaponTrails() { return catalog.weaponTrails; }
+    public TotemAnimationModule totemAnimation() { return catalog.totemAnimation; }
     public ShieldModule shield() { return catalog.shield; }
     public FireOverlayModule fire() { return catalog.fire; }
     public SkyPaletteModule sky() { return catalog.sky; }
@@ -67,6 +69,9 @@ public final class NexVisualsClient implements ClientModInitializer {
         LocalAttackFeedback.register(catalog.hits::attacked, catalog.sounds::attacked);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.sounds::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.trails::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.swing::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.weaponTrails::tick);
+        catalog.trails.registerRendering();
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.jumpRings::tick);

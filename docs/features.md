@@ -1,10 +1,28 @@
-# Возможности 0.7.0-dev
+# Возможности 0.9.0-dev
+
+## Предрелиз 0.9
+
+Viewmodel PvP/Cinematic получили мягкие углы, inward offsets и дополнительную глубину вместо старых смещений за край кадра. Оба пресета включают separate offhand и Mirror left-handed layout: X/yaw/roll зеркалятся при Minecraft Main Arm: Left. Эта настройка по умолчанию выключена для старых пользовательских layouts; другие пресеты и общий transform pipeline не изменены. Общий Cinematic profile использует тот же исправленный рецепт.
+
+После обновления выберите **Viewmodel → PvP / Cinematic → Apply**. Конфиг удалять не нужно. Старые вручную сохранённые profiles загружают собственные прежние числа; примените новый recipe и Update profile, если нужен исправленный вариант. Проверены проекции vanilla handheld asset для main/offhand, Left/Right main arm, FOV 55/64/70/85 и aspect 4:3/16:9/21:9. Это математическая проверка at rest, не GPU/runtime visual QA: экзотические модели и взаимодействие с swing/use/camera нужно оценить в игре.
+
+## Обновление 0.8.2
+
+Item Swing: отдельный монотонный clock от принятого vanilla swing, полный одиночный motion, 65 ms carry при повторе, сбалансированные presets. Weapon Trails: actual model transform, AUTO/MODEL/LEGACY_HAND, Coverage/Smoothness, разрыв истории между ударами и защита от скачков/near plane. [Подробности](swing-and-weapon-trails.md).
+
+## Hotfix 0.8.1
+
+Исправлен crash Player Trails при первом world render: геометрия рисуется через AFTER_ENTITIES, когда Fabric draw context уже подготовлен. Отсутствующие worldState/matrices/buffers пропускаются; OFF и старые particle modes не читают draw context.
+
+## Дополнения 0.8
+
+Player Trails получил непрерывные **Ribbon / Twin Flow / Light Line** с ограниченной историей, taper/gradient/soft edges. **Weapon Trails** следует финальной матрице оружия от первого лица; **Totem Animation** добавляет Classic/Compact/Float/Spin/Pop. Presets, sections и enum-настройки выбираются раскрывающимися списками. [Подробности, performance limits и checklist](trails-and-totem.md).
 
 ## Дополнения 0.7
 
 Hit Sounds расширен шестью предоставленными клипами и настройкой quieter vanilla attacks. **Totem Pop Sounds** выбирает локальный звук настоящего срабатывания тотема, **Totem Tracker HUD** считает такие срабатывания и показывает время после последнего. Оба используют прежние settings/presets/config; Tracker — общий drag/scale HUD Editor. Подробности, отличия приватной аудиосборки и checklist — в [Sound Feedback](sound-feedback.md).
 
-Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль кнопкой `>` и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
+Все модули выключены по умолчанию. В мире откройте меню **Right Shift** (переназначение через Minecraft Controls) или кнопкой NexVisuals в pause menu. Выберите модуль, включите его, выберите встроенный стиль в раскрывающемся списке и нажмите `Apply`. `Reset settings` возвращает defaults выбранного модуля, не выключая его. Цвета — `#AARRGGBB`.
 
 ## Дополнения 0.6
 
@@ -73,7 +91,7 @@ Hit Sounds — отдельный модуль: прежние Soft, Click, Pop,
 
 ## Viewmodel / Swing / Shield / Fire
 
-- **Viewmodel:** X/Y/Z, pitch/yaw/roll, общий scale и множители scale X/Y/Z для main/offhand. Independent offhand, Copy, Mirror, reset. Presets: Vanilla, Compact, Low, Centered, PvP, Cinematic. Если Separate off hand выключен, используются настройки main hand.
+- **Viewmodel:** X/Y/Z, pitch/yaw/roll, общий scale и множители scale X/Y/Z для main/offhand. Independent offhand, Copy, Mirror, reset. Presets: Vanilla, Compact, Low, Centered, PvP, Cinematic. Если Separate off hand выключен, используются настройки main hand. Mirror left-handed layout опционально зеркалит X/yaw/roll обеих рук при Left main arm; старые абсолютные координаты по умолчанию сохранены.
 - **Item Swing:** Vanilla, Smooth, Swipe, Slash, Spin, Push, Custom. Visual duration 100–900 ms, amplitude, easing, attack/return balance. Custom задаёт translation X/Y/Z, pitch/yaw/roll и peak scale; старт и конец совпадают со статичным Viewmodel. Spin совершает полный оборот; amplitude регулирует lift, чтобы не было скачка в конце.
 - **Shield:** независимые resting/blocking X/Y/Z, scale, pitch/yaw/roll. Vanilla, Compact, Minimal. Добавляется после Viewmodel и может использоваться без него. Opacity shield не реализована: её стабильное применение ко всем составляющим item submission потребовало бы более широкого вмешательства.
 - **Fire Overlay:** видимость вплоть до полного скрытия first-person flames, height/width, X/Y, opacity. Vanilla, Low, Minimal, Hidden. Burning state, damage и world fire неизменны.
@@ -82,7 +100,7 @@ Swing заменяет обычный WHACK-path first-person item animation. П
 
 ## Trails и Cosmetics
 
-**Player Trails:** Motes, Silk, Sparks, Rings, Rainbow. Готовые варианты Silk, Ember, Prism, Ripples. Primary/secondary ARGB, life, size, density, minimum movement, emitter height, fade и third-person-only toggle. Silk — перекрывающиеся soft billboards, а не непрерывная геометрическая лента. Trail принадлежит только локальному игроку; исчезает по bounded lifetime.
+**Player Trails:** Motes, Silk, Sparks, Rings, Rainbow. Готовые варианты Silk, Ember, Prism, Ripples. Primary/secondary ARGB, life, size, density, minimum movement, emitter height, fade и third-person-only toggle. Silk — перекрывающиеся soft billboards, а не непрерывная геометрическая лента. Trail принадлежит только локальному игроку; исчезает по bounded lifetime. Дополнительно доступны геометрические RIBBON/DUAL/LINE и presets Ribbon/Twin Flow/Light Line; smoothing, максимальная длина и taper описаны в [trails-and-totem](trails-and-totem.md).
 
 **Cosmetic Hat:** conical/China Hat с radius, height, vertical offset, ARGB tip/rim, gradient, brim outline и rotation. Presets Prism, Straw, Midnight. Только видимый локальный игрок, third person, обычный entity feature layer и depth test. Другие игроки не получают косметику по сети. В first person шляпа не рисуется.
 

@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 /** Keeps vanilla button keyboard/narration behavior, with a small custom visual treatment. */
 final class NexButton extends Button {
@@ -23,7 +24,12 @@ final class NexButton extends Button {
 
     NexButton(int x, int y, int width, int height, Supplier<String> label,
               BooleanSupplier selected, Runnable action, GlobalSettings globals) {
-        super(x, y, width, height, Component.literal(label.get()), button -> action.run(), DEFAULT_NARRATION);
+        this(x,y,width,height,label,selected,button -> action.run(),globals);
+    }
+
+    NexButton(int x, int y, int width, int height, Supplier<String> label,
+              BooleanSupplier selected, Consumer<NexButton> action, GlobalSettings globals) {
+        super(x, y, width, height, Component.literal(label.get()), button -> action.accept((NexButton)button), DEFAULT_NARRATION);
         this.globals = globals;
         this.label = label;
         this.selected = selected;

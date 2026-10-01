@@ -29,9 +29,10 @@ final class SettingControls {
     private final Consumer<KeybindSetting> captureKey;
     private final Consumer<ColorSetting> openColor;
     private final Runnable rebuild;
+    private final ChoicePopup.Selector choices;
 
     SettingControls(Font font, GlobalSettings globals, GuiState state, Consumer<AbstractWidget> register,
-                    Consumer<KeybindSetting> captureKey, Consumer<ColorSetting> openColor, Runnable rebuild) {
+                    Consumer<KeybindSetting> captureKey, Consumer<ColorSetting> openColor, Runnable rebuild,ChoicePopup.Selector choices) {
         this.font = font;
         this.globals = globals;
         this.state = state;
@@ -39,6 +40,7 @@ final class SettingControls {
         this.captureKey = captureKey;
         this.openColor = openColor;
         this.rebuild = rebuild;
+        this.choices = choices;
     }
 
     int add(ScrollPane pane, Setting<?> setting, int y) {
@@ -68,8 +70,7 @@ final class SettingControls {
             control = new NumericSlider(x, width, number.min(), number.max(), number::get,
                     number::set, false, pane.area, globals);
         } else if (setting instanceof EnumSetting<?> choice) {
-            control = new NexButton(x, 0, width, 20, () -> choice.get().toString().replace('_', ' '), () -> false,
-                    choice::cycle, globals);
+            control = enumControl(x,width,choice);
         } else if (setting instanceof KeybindSetting keybind) {
             control = new NexButton(x, 0, width, 20, () -> keyName(keybind.get()), () -> false,
                     () -> captureKey.accept(keybind), globals);
@@ -111,6 +112,12 @@ final class SettingControls {
             }
         }
         return y + rowHeight + 5;
+    }
+
+    private <E extends Enum<E>> NexButton enumControl(int x,int width,EnumSetting<E> choice) {
+        var options=choice.values().stream().map(value->new ChoicePopup.Option(value.toString().replace('_',' '),choice.description())).toList();
+        return new NexButton(x,0,width,20,()->choice.get().toString().replace('_',' ')+" v",()->false,
+                button->choices.open(button,options,choice.values().indexOf(choice.get()),index->choice.set(choice.values().get(index))),globals);
     }
 
     private static final class ColorSwatch extends net.minecraft.client.gui.components.Button {

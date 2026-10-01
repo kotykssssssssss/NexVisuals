@@ -18,6 +18,8 @@ public final class ClientModules {
     public final ModuleRegistry registry = new ModuleRegistry();
     public final ViewmodelModule viewmodel = registry.register(new ViewmodelModule());
     public final SwingModule swing = registry.register(new SwingModule());
+    public final WeaponTrailsModule weaponTrails = registry.register(new WeaponTrailsModule());
+    public final TotemAnimationModule totemAnimation = registry.register(new TotemAnimationModule());
     public final ShieldModule shield = registry.register(new ShieldModule());
     public final CameraModule camera = registry.register(new CameraModule());
     public final MenuBackdropModule backdrop = registry.register(new MenuBackdropModule());
