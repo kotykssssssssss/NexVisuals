@@ -33,6 +33,14 @@ final class GuiState {
         }
     }
 
+    /** EditBox also notifies its responder on cursor moves, including focus restoration. */
+    boolean updateQuery(String value) {
+        if (query.equals(value)) return false;
+        query = value;
+        moduleScroll = 0;
+        return true;
+    }
+
     List<VisualModule> matching(ModuleRegistry registry) {
         String needle = query.strip().toLowerCase(Locale.ROOT);
         return registry.all().stream()

@@ -99,9 +99,7 @@ public final class NexVisualsScreen extends Screen {
         search.setHint(Component.literal("Search modules..."));
         search.setValue(state.query);
         search.setResponder(value -> {
-            state.query = value;
-            state.moduleScroll = 0;
-            requestRebuild();
+            if (state.updateQuery(value)) requestRebuild();
         });
         addRenderableWidget(search);
         addRenderableWidget(button(layout.left() + layout.width() - globalWidth - 8, toolbarY, globalWidth, 20,

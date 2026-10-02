@@ -1,3 +1,44 @@
+# Предрелиз 0.9.1-dev — 2 октября 2026
+
+Исправлен reported GUI bug: при непустом поиске описания мерцали, а список постоянно возвращался вверх. В фактическом Minecraft **1.21.11** `EditBox.moveCursorTo` вызывает `onValueChange` даже без изменения строки. Восстановление курсора после rebuild повторно запускало search responder, обнуляло moduleScroll и назначало следующий rebuild. `GuiState.updateQuery` теперь различает изменение текста и cursor-only notification; экран перестраивает список только в первом случае. Старое восстановление keyboard focus/курсорной позиции сохранено. Rendering, presets, config schema, Viewmodel и звуки не переписаны.
+
+## Выполненные проверки
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME=Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP=Join-Path (Get-Location) '.tools\tmp'
+$env:TMP=$env:TEMP
+.\gradlew.bat clientTest --tests '*SearchNavigationTest' --no-daemon --offline --console=plain '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+.\gradlew.bat clean build --no-daemon --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp'
+git diff --check
+```
+
+- Targeted **4 SearchNavigationTest checks — PASS**. Использованы настоящие EditBox text/cursor callbacks 1.21.11 с null font и без game instance/window/GPU. 60 cursor-restoration notifications не вызывают новые rebuilds и не сбрасывают moduleScroll. Изменение/очистка текста обновляет фильтр один раз, выбранный модуль/settings scroll сохраняются. Проверены category/name/description/ID filtering, длинный filtered list, scroll bounds, clipping/hit areas и identity native tooltip при прокрутке. Это не проверка фактически нарисованного tooltip.
+- **Clean BUILD SUCCESSFUL, 15 tasks executed. 176 tests: 118 core + 58 headless client; failures/errors/skipped = 0.** Прежние config/profile/serialization/settings/render-math/Mixin checks прошли. Итоговый build output без warnings. Логи: ignored `.tools/validation-0.9.1-search.log`, `.tools/validation-0.9.1-build.log`.
+- Первая попытка targeted suite не скомпилировала новый тест: у AbstractWidget 1.21.11 нет публичного getTooltip. Test-only introspection native WidgetTooltipHolder исправила fixture; production reflection не добавлялась. Исправленная targeted suite и последующая полная чистая сборка прошли.
+- verifyModJar и отдельное чтение ZIP подтвердили client-only entrypoint, Minecraft `=1.21.11`, версию `0.9.1-dev`, прежние ресурсы и отсутствие Test.class в моде. Все **6 OGG + user-audio manifest** byte-for-byte совпадают с local resources. Отчёт: ignored `.tools/validation-0.9.1-artifact.json`.
+- `git diff --check` и whitespace check нового test source — PASS. GLSL/resources в этом bugfix не менялись.
+
+## Production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-0.9.1-dev.jar` — 562607 bytes.**
+
+SHA-256: `7DCBCE30F625EE035DC37917A389972B4D3C149EFFB0FA7ADEFE6A9A22CA779C`.
+
+Production/remapped JAR с прежними пользовательскими звуками. Требования: **Minecraft 1.21.11**, Java 21+, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11. Других обязательных dependencies нет. Sources JAR не устанавливать; предыдущий NexVisuals JAR убрать из mods перед заменой. Config удалять не нужно.
+
+## Проверить вручную
+
+1. Открыть All modules, ввести `a` или `trail`. Оставить курсор/keyboard focus в поиске и навести мышь на модуль: описание должно сохраняться без мерцания.
+2. С активным запросом прокрутить длинный список вниз/вверх; затем выбрать модуль, переключить его и открыть settings/preset dropdown. Проверить поиск внутри выбранной категории.
+3. Left/Right/Home/End, выделение текста и Ctrl+F не должны сбрасывать список. Изменение/очистка запроса должно обновлять результаты; resize и повторный вход в меню должны сохранять работоспособность ввода.
+4. Быстро проверить прежние Viewmodel/Swing/Trails, Mini Fire/Mini Shield, звуки и сохранение config/profiles после restart.
+
+Minecraft/runClient/computer-use не запускались. Visual/runtime QA, FPS и Sodium/Iris остаются для самостоятельной проверки пользователя. Это предрелизная bugfix-сборка, без commit/push/tag/release/publication.
+
+---
+
 # Предрелиз 0.9.0-dev — 1 октября 2026
 
 Исправлены module presets **Viewmodel PvP / Cinematic** и встроенный global Cinematic profile. Старые большие углы вращали vanilla hand placement вместе с предметом и выводили его за край кадра. Новые рецепты используют inward offsets, мягкие углы, небольшую дополнительную глубину и отдельную offhand. Opt-in `mirror_layout` зеркалит X/yaw/roll обеих рук при Left main arm; default false сохраняет прежнюю семантику ручных layouts. Другие Viewmodel presets, статичный transform pipeline и уже исправленные Swing/Trails не переписаны.
