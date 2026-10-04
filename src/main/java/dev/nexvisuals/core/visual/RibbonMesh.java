@@ -63,6 +63,9 @@ public final class RibbonMesh {
         return sweep(path,now,lifetime,primary,secondary,1);
     }
     public static RibbonMesh sweep(TrailHistory path,long now,long lifetime,int primary,int secondary,int quality) {
+        return sweep(path,now,lifetime,primary,secondary,quality,2);
+    }
+    public static RibbonMesh sweep(TrailHistory path,long now,long lifetime,int primary,int secondary,int quality,double fadePower) {
         if(path.size()<2 || lifetime<=0 || now-path.time(path.size()-1)>=lifetime) return EMPTY;
         int steps=Math.clamp(quality,1,3), sections=(path.size()-1)*steps;
         Builder mesh=new Builder(sections*12);
@@ -72,8 +75,8 @@ public final class RibbonMesh {
             double at=i/(double)steps, previous=(i-1)/(double)steps;
             sweepSample(path,at,after);
             double oldAge=EffectMath.unit((now-sweepTime(path,previous))/(double)lifetime), age=EffectMath.unit((now-sweepTime(path,at))/(double)lifetime);
-            int a=alpha(EffectMath.color(primary,secondary,oldAge),Math.pow(1-oldAge,2));
-            int b=alpha(EffectMath.color(primary,secondary,age),Math.pow(1-age,2));
+            int a=alpha(EffectMath.color(primary,secondary,oldAge),Math.pow(1-oldAge,Math.clamp(fadePower,.5,4)));
+            int b=alpha(EffectMath.color(primary,secondary,age),Math.pow(1-age,Math.clamp(fadePower,.5,4)));
             for(int strip=0;strip<3;strip++) {
                 double low=switch(strip){case 0->0;case 1->.15;default->.85;};
                 double high=switch(strip){case 0->.15;case 1->.85;default->1;};

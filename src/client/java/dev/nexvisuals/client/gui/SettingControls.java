@@ -44,6 +44,7 @@ final class SettingControls {
     }
 
     int add(ScrollPane pane, Setting<?> setting, int y) {
+        if (!setting.visible()) return y;
         int x = pane.area.x() + 8;
         int width = pane.area.width() - 16;
         int rowHeight = setting instanceof ColorSetting ? 77 : 53;
@@ -62,7 +63,7 @@ final class SettingControls {
         AbstractWidget control;
         if (setting instanceof BooleanSetting bool) {
             control = new NexButton(x, 0, width, 20, () -> bool.get() ? "Enabled" : "Disabled", bool::get,
-                    () -> bool.set(!bool.get()), globals);
+                    () -> { bool.set(!bool.get()); rebuild.run(); }, globals);
         } else if (setting instanceof IntSetting number) {
             control = new NumericSlider(x, width, number.min(), number.max(), () -> number.get(),
                     value -> number.set((int) Math.round(value)), true, pane.area, globals);

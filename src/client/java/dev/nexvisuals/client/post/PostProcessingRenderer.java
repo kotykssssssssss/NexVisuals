@@ -36,7 +36,7 @@ public final class PostProcessingRenderer implements AutoCloseable {
             if(copy!=null) copy.destroyBuffers();
             copy=new TextureTarget("NexVisuals image copy",target.width,target.height,false);
         }
-        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals post settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,272);
+        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals post settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,320);
         float partial=delta.getGameTimeDeltaPartialTick(false);
         float night=Math.clamp(client.gameRenderer.getMainCamera().attributeProbe().getValue(EnvironmentAttributes.STAR_BRIGHTNESS,partial)*2,0,1);
         float hurt=Math.clamp((client.player.hurtTime-partial)/Math.max(1f,client.player.hurtDuration),0,1);
@@ -57,15 +57,18 @@ public final class PostProcessingRenderer implements AutoCloseable {
             u.putVec4(post&&module.edgeSoftness.get()?f(module.edgeIntensity):0,f(module.edgeRadius),module.glowFootprint.get().ordinal(),0);
             u.putVec4(grading?f(module.exposure):0,grading?f(module.highlights):0,f(module.grainScale),0);
             if(extras==null) {
-                for(int i=0;i<6;i++) u.putVec4(0,0,0,0);
+                for(int i=0;i<9;i++) u.putVec4(0,0,0,0);
             } else {
                 var rain=extras.weather;var water=extras.water;var retro=extras.retro;
                 u.putVec4(extras.rain,f(rain.density),f(rain.speed),f(rain.refraction));
-                u.putVec4(rain.style.get().ordinal(),f(rain.shading),0,0);
+                u.putVec4(rain.style.get().ordinal(),f(rain.shading),f(rain.dropSize),f(rain.randomness));
                 u.putVec4(extras.submerged,f(water.wobble),f(water.speed),f(water.caustics));
                 u.putVec4(f(water.causticScale),f(water.silt),0,0);
                 u.putVec4(retro.enabled()?f(retro.intensity):0,retro.pixelSize.get(),retro.levels.get(),f(retro.dither));
                 u.putVec4(f(retro.scanlines),retro.spacing.get(),f(retro.phosphor),0);
+                color(u,rain.dropTint.get(),1);
+                u.putVec4(f(water.siltSize),f(water.siltDensity),f(water.siltSpeed),water.siltShape.get().ordinal());
+                color(u,water.siltColor.get(),1);
             }
         }
         encoder.copyTextureToTexture(target.getColorTexture(),copy.getColorTexture(),0,0,0,0,0,target.width,target.height);

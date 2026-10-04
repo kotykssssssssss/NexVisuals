@@ -14,11 +14,14 @@ layout(std140) uniform VisualConfig {
     vec4 Lens;
     vec4 Tonal;
     vec4 Rain;        // wet amount, density, speed, refraction in physical pixels
-    vec4 RainOptics;  // pattern, droplet shading
+    vec4 RainOptics;  // pattern, droplet shading, size, placement variation
     vec4 Water;       // submerged amount, refraction in pixels, speed, caustics
     vec4 WaterOptics; // caustic scale, silt
     vec4 Retro;       // strength, pixel size, color levels, dither
     vec4 RetroOptics; // scanlines, line spacing, phosphor
+    vec4 RainColor;
+    vec4 Silt;        // size, density, drift speed, shape
+    vec4 SiltColor;
 };
 in vec2 texCoord;
 out vec4 fragColor;
@@ -35,9 +38,9 @@ vec3 lensRain(vec2 uv) {
         p.y+=Balance.w*Rain.z*(.45+float(layer)*.18);
         p.x+=float(layer)*3.17;
         vec2 cell=floor(p);
-        vec2 local=fract(p)-vec2(.28+hash21(cell)*.44,.3+hash21(cell+19.0)*.4);
+        vec2 local=fract(p)-mix(vec2(.5),vec2(.28+hash21(cell)*.44,.3+hash21(cell+19.0)*.4),RainOptics.w);
         vec2 radii=RainOptics.x>.5 && RainOptics.x<1.5?vec2(.09,.32):RainOptics.x>1.5?vec2(.1,.12):vec2(.16,.22);
-        vec2 normal=local/radii;
+        vec2 normal=local/(radii*RainOptics.z);
         float r=length(normal);
         float presence=step(.42,hash21(cell+float(layer)*31.0));
         float mask=(1.0-smoothstep(.7,1.0,r))*presence;
@@ -137,16 +140,17 @@ void main() {
     color=mix(color,VignetteColor.rgb,edge*Effects.x*VignetteColor.a);
     color=mix(color,DamageColor.rgb,DamageColor.a);
     color=mix(source.rgb,clamp(color,0.0,1.0),Balance.z);
-    if(Rain.x>0.0) color*=1.0+rain.z*RainOptics.y*Rain.x;
+    if(Rain.x>0.0) color*=1.0+rain.z*RainOptics.y*Rain.x*mix(vec3(1.0),RainColor.rgb,RainColor.a);
     if(Water.x>0.0) {
         vec2 p=texCoord*vec2(Viewport.x/Viewport.y,1.0);
         float t=Balance.w*Water.z;
         float waves=sin(p.x*WaterOptics.x+t)+sin(p.y*WaterOptics.x*1.2-t*.7)+sin((p.x+p.y)*WaterOptics.x*.8+t*.4);
         float shimmer=pow(max(0.0,1.0-abs(waves)*2.0),3.0);
-        vec2 siltCell=p*45.0+vec2(t*.18,-t*.3),local=fract(siltCell)-.5;
-        float speck=(1.0-smoothstep(.035,.08,length(local)))*step(.8,hash21(floor(siltCell)));
+        vec2 siltCell=p*45.0*Silt.y+vec2(t*.18,-t*.3)*Silt.z,local=(fract(siltCell)-.5)/Silt.x;
+        float shape=Silt.w<.5?length(local):Silt.w<1.5?abs(local.x)+abs(local.y):min(length(local*vec2(2.6,.8)),length(local*vec2(.8,2.6)));
+        float speck=(1.0-smoothstep(.035,.08,shape))*step(.8,hash21(floor(siltCell)));
         // Screen-space decoration, multiplicative only: fog, black shadows and depth remain intact.
-        color*=1.0+Water.x*(shimmer*Water.w+speck*WaterOptics.y);
+        color*=1.0+Water.x*(shimmer*Water.w+speck*WaterOptics.y*SiltColor.rgb*SiltColor.a);
     }
     if(Retro.x>0.0) {
         color=retroSurface(color);

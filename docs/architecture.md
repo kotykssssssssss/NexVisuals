@@ -1,6 +1,12 @@
 # Архитектура NexVisuals
 
+Particle polish 1.2 описан в [отдельном документе](particle-polish.md): существующий `EffectEmitter`/vanilla pipeline, per-module `ParticleAppearance`, geometric `ParticlePalette`, чистые `ParticleMath`/`ParticleBudget` и neutral legacy recipes. Параллельного engine нет. `Setting.visibleWhen` задаёт metadata visibility без изменения serialization; общий ClickGUI обновляет её при смене режима/boolean и после завершения slider drag. Новые Consumption FX / Rain Ripples используют client tick и тот же emitter, без Mixins и gameplay mutations.
+
 Проект остаётся клиентским Fabric-модом для **Minecraft 1.21.11**. `src/main` — обычная Java-логика и ресурсы, `src/client` — интеграция с игрой. Серверного entrypoint нет.
+
+В 1.1 конфигурационный GUI использует `CategoryBoardLayout` / `CategoryPanel` / `ModuleRow`: movable/foldable окна категорий с независимым scroll, global search и общим settings inspector. Прежний `SettingControls` продолжает генерировать редактор всех зарегистрированных модулей; module-specific branches не добавлены. Normalized `PanelPosition` хранится в optional `gui.panels` config/profile fields, schema 1 сохранена. [Подробности интерфейса и собственного prediction](panels-and-trajectory.md).
+
+Новый `TrajectoryMath` интегрирует vanilla air physics на primitive scratch buffer; `TrajectoryModule` выбирает только local held/use item и проверяет native block shapes/загруженные chunks. Immutable bounded snapshot передаётся через Fabric END_EXTRACTION → AFTER_ENTITIES в штатный depth-tested quad buffer. Drawing не читает мир и не ищет entities. Это предварительная траектория собственного броска; уже летящие снаряды обслуживает отдельный прежний `ProjectileTrailsModule`, не новая prediction system. Mixins/серверная логика не добавлены.
 
 ## Регистрация и жизненный цикл
 

@@ -2,6 +2,7 @@ package dev.nexvisuals.core.setting;
 
 import com.google.gson.JsonElement;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /** A module declares settings once; persistence and the GUI use the same definitions. */
 public abstract class Setting<T> {
@@ -11,6 +12,7 @@ public abstract class Setting<T> {
     private T defaultValue;
     private T value;
     private long revision;
+    private BooleanSupplier visibility = () -> true;
 
     protected Setting(String id, String name, String description) {
         if (id == null || !id.matches("[a-z][a-z0-9_]*")) {
@@ -33,6 +35,8 @@ public abstract class Setting<T> {
     public final T defaultValue() { return defaultValue; }
     public final T get() { return value; }
     public final long revision() { return revision; }
+    public final boolean visible() { return visibility.getAsBoolean(); }
+    public final void visibleWhen(BooleanSupplier condition) { visibility = Objects.requireNonNull(condition); }
     public final void set(T value) {
         T checked = validate(Objects.requireNonNull(value));
         if (!Objects.equals(this.value, checked)) { this.value = checked; revision++; }

@@ -26,6 +26,12 @@ public final class LiveBackgroundModule extends VisualModule {
     public final DoubleSetting motion=number("motion","Motion amount",.65,0,1);
     public final DoubleSetting softness=number("softness","Shape softness",.55,.1,1);
     public final IntSetting particles=add(new IntSetting("particles","Subtle motes","Approximate particle count from a deterministic GPU grid; no particle objects/history.",10,0,32));
+    public final DoubleSetting moteSize=number("mote_size","Mote size",1,.5,3);
+    public final DoubleSetting moteOpacity=number("mote_opacity","Mote opacity",1,0,2);
+    public final DoubleSetting moteSpeed=number("mote_speed","Mote drift speed",1,0,3);
+    public final DoubleSetting moteTwinkle=number("mote_twinkle","Mote twinkle",1,0,1);
+    public final BooleanSetting moteAccent=add(new BooleanSetting("mote_accent","Motes use accent","Match the wallpaper accent, or set an independent mote color.",true));
+    public final ColorSetting moteColor=color("mote_color","Mote color",0xFFD1E5FF);
     public final DoubleSetting dim=number("dim","Background dim",.25,0,.8);
     public final BooleanSetting pauseMenu=add(new BooleanSetting("pause_menu","Also in pause menu","Optional opaque wallpaper behind vanilla pause buttons; containers/gameplay screens remain untouched.",false));
     private final MenuClock clock=new MenuClock();
@@ -37,13 +43,17 @@ public final class LiveBackgroundModule extends VisualModule {
         super("live_background","Live Background","Slow GPU wallpapers with editable colors. Title, NexVisuals and optional pause menu; compatible with Console Menu layout.",Category.INTERFACE);
         group("Background",background,style,pauseMenu,dim);
         group("Colors",primary,secondary,accent,brightness,saturation,intensity);
-        group("Motion & shapes",speed,motion,softness,particles);
+        group("Motion & shapes",speed,motion,softness);
+        group("Motes",particles,moteSize,moteOpacity,moteSpeed,moteTwinkle,moteAccent,moteColor);
+        for(var s:new Setting<?>[]{moteSize,moteOpacity,moteSpeed,moteTwinkle,moteAccent}) s.visibleWhen(()->particles.get()>0);
+        moteColor.visibleWhen(()->particles.get()>0&&!moteAccent.get());
         preset("NexVisuals","Layered diagonal ribbons with violet/cyan depth and soft light edges.");
         preset("Aurora","Flowing horizontal light curtains in blue and mint.","style","AURORA","primary","#FF3D9B8D","secondary","#FF225685","accent","#FFABE5C2","speed",.5,"softness",.7,"particles",14);
         preset("Flow","Slow elliptical color fields, with no ribbons or specks.","style","FLOW","primary","#FF675396","secondary","#FF367F95","accent","#FFD5A5BF","softness",.85,"motion",.5,"particles",0);
         preset("Nebula","Soft cloudy violet depths with sparse drifting stars.","style","NEBULA","primary","#FF6E4B94","secondary","#FF273F6F","accent","#FFAABEEB","speed",.35,"brightness",.7,"softness",.8,"particles",22);
         preset("Waves","Broad curved green bands and fine light edges, inspired by calm dashboard wallpapers.","style","WAVES","primary","#FF529C58","secondary","#FF224B31","accent","#FFC5E38A","speed",.4,"motion",.45,"softness",.45,"particles",0);
         preset("Minimal","A restrained diagonal gradient with almost imperceptible movement.","style","MINIMAL","primary","#FF334660","secondary","#FF242D43","accent","#FF647A8E","speed",.2,"motion",.12,"intensity",.45,"particles",0);
+        preset("Stardust","Quiet cloudy depths with larger, slowly drifting pale motes.","style","NEBULA","primary","#FF685589","secondary","#FF243A56","particles",24,"mote_size",1.5,"mote_opacity",1.35,"mote_speed",.5,"mote_twinkle",.5,"speed",.35,"dim",.32);
     }
     private DoubleSetting number(String id,String name,double value,double min,double max) {
         return add(new DoubleSetting(id,name,"Live preview behind the menu. Speed or motion = 0 freezes animation.",value,min,max));

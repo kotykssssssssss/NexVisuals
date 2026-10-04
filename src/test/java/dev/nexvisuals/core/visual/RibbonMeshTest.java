@@ -4,6 +4,18 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RibbonMeshTest {
+    @Test void newFadeCurveChangesOpacityWithoutChangingSweepGeometry() {
+        var path=new TrailHistory(48);path.edges(0,0,0,-2,0,1,-2,.001,3);path.edges(10,1,0,-2,1,1,-2,.001,3);
+        var original=RibbonMesh.sweep(path,40,100,-1,-1,2);
+        var neutral=RibbonMesh.sweep(path,40,100,-1,-1,2,2);
+        var soft=RibbonMesh.sweep(path,40,100,-1,-1,2,.75);
+        assertEquals(original.vertices(),soft.vertices());
+        for(int i=0;i<original.vertices();i++) {
+            assertEquals(original.color(i),neutral.color(i));
+            for(int axis=0;axis<3;axis++) assertEquals(original.coordinate(i,axis),soft.coordinate(i,axis));
+        }
+        assertTrue((soft.color(2)>>>24)>(original.color(2)>>>24));
+    }
     private TrailHistory path(double origin) {
         TrailHistory history=new TrailHistory(64);
         for(int i=0;i<64;i++) history.point(i*50,origin+i*.1,1,origin,.01,3);

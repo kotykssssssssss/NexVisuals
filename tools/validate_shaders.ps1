@@ -25,7 +25,7 @@ try {
         }
         $diagnostics = & $Validator -l -q (Join-Path $output "$shader.vert") (Join-Path $output "$shader.frag")
         if ($LASTEXITCODE -ne 0) { $diagnostics | Write-Output; throw "GLSL compile/link failed: $shader" }
-        $blocks = @{ sky_dome = @('SkyConfig',176); custom_stars = @('StarConfig',48); visual_grade = @('VisualConfig',272); live_background = @('BackgroundConfig',96); glow_extract = @('HighlightConfig',16) }
+        $blocks = @{ sky_dome = @('SkyConfig',208); custom_stars = @('StarConfig',48); visual_grade = @('VisualConfig',320); live_background = @('BackgroundConfig',128); glow_extract = @('HighlightConfig',16) }
         $block = $blocks[$shader]
         if (($diagnostics -join "`n") -notmatch "(?m)^$($block[0]):.*size $($block[1]),") {
             $diagnostics | Write-Output; throw "GPU uniform layout differs from Java buffer: $shader"

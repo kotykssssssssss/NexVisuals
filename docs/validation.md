@@ -1,4 +1,111 @@
-# NexVisuals 1.0.0 — 4 октября 2026
+# NexVisuals 1.2.0-dev — 4 октября 2026
+
+Завершён [particle polish](particle-polish.md): eleven world-particle owners, geometric weapon/player ribbons, sky meteors, menu/GUI/GPU particle-like effects, 41 new recipes and two distinct new modules. Existing ClickGUI/Local Trajectory and other systems retained. No new Mixins/dependencies; target remains Minecraft **1.21.11**. Original eight masks and the six local audio clips are byte-for-byte unchanged. The old-preset fixture checks 57 recipes across fourteen modules; old Weather Lens / Underwater controls have neutral-parameter coverage too.
+
+## Автоматическая проверка
+
+With the existing local JDK 21 / Gradle 9.2.1, project-local cache/temp and IPv4 JVM options, the final command was:
+
+```powershell
+.\gradlew.bat clean build --offline --no-daemon --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp -Djava.net.preferIPv4Stack=true'
+.\tools\validate_shaders.ps1
+git diff --check
+```
+
+- **BUILD SUCCESSFUL in 1m 15s; 16 tasks executed.** Compilation, complete test/clientTest/check, remapJar and verifyModJar passed. Final log: `.tools/validation-1.2.0-build.log`; no Java compiler warnings/errors.
+- **236 tests: 149 core + 87 headless client; zero failures/errors/skipped.** Counts read from this clean build's XML. Added checks cover color/envelope/light/distance math, all quality admission caps under 100,000 attempts, world/tick resets, native Decreased behavior, old-preset values, config/profile restart/reset/missing fields/clamping, conditional controls, cached snapshots, color-mode priority, use-animation completion/cancellation, unchanged sweep geometry under fade edits and new-module scope. Existing GUI lifecycle, trajectory/native physics, corrupt config/profile and Mixins checks remain in the complete suite.
+- Five GLSL 330 vertex/fragment pairs compiled and linked with actual Minecraft 1.21.11 includes. Java/std140 layout verification passed: SkyConfig **208**, StarConfig **48**, VisualConfig **320**, BackgroundConfig **128**, HighlightConfig **16** bytes. Log: `.tools/particle-shader-validation.log`. This is offline syntax/link/layout verification, not GPU execution.
+- JAR ZIP integrity, client-only metadata, exact Minecraft `=1.21.11`, production intermediary remapping, eleven atlas masks, both new classes, absence of test/Minecraft classes, six unchanged OGGs and original mask bytes passed. Audit: `.tools/validation-1.2.0-audit.json`.
+- `git diff --check` and new Java newline/trailing whitespace checks passed. No generated build/bin/runtime/cache/log files are tracked or unignored. Git only reported its existing LF→CRLF advisory for `.gitignore`; no whitespace errors.
+
+## Готовый production JAR
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-1.2.0-dev.jar`** — remapped production mod, **690600 bytes**. SHA-256: `78af5d84f2ec42887454ad53b1cefae8b4a816d5a4675e7292067601edade46a`.
+
+Requires Minecraft **1.21.11**, Java **21+**, Fabric Loader **>=0.19.5**, Fabric API **>=0.141.6+1.21.11**. No new required dependencies; Sodium/Iris remain optional and runtime compatibility for this build is unverified. The sources JAR is not the installation artifact. Replace the previous mod JAR rather than installing both. This local build retains the six user-supplied sounds using the existing optional private resource directory; their redistribution status is unchanged.
+
+**Minecraft/runClient/computer-use were not launched.** All visual appearance, interaction with resource packs/rendering mods, measured FPS and actual client restart persistence need the user's manual pass. Check old presets first, then new shapes/colors/randomness/fades/quality, local eat/drink FX, actual rain ground/water ripples, stars/meteors, backgrounds/Vanilla fallback, container clicks, Weather Lens and underwater specks, GUI mode-dependent controls and profiles/restart. The detailed checklist and limitations are in [particle polish](particle-polish.md).
+
+Known deliberate limits: live world particles retain their spawn snapshot until expiry (maximum ten seconds); quality-switch remnants can temporarily exceed the newly selected cap while remaining bounded. Surface rain probes may be skipped rather than drawing through shelter/unknown surfaces. Consumption's finish flourish observes a client animation, not confirmed server consumption. Geometric ribbons use existing bounded immutable extraction snapshots; no speculative render-engine rewrite/pool or frustum override was introduced. No claims of measured performance or Sodium/Iris visual testing.
+
+No commit/push/tag/release, mod installation or edits outside NexVisuals were performed.
+
+---
+
+# NexVisuals 1.1.1-dev — 4 октября 2026
+
+Исправлен сообщённый пользователем crash `NexVisualsScreen.render: settingPane is null`. Режим редактора переключался внутри callback мыши/клавиатуры, но widgets строились только в следующем `tick`. Кадр между этими событиями обращался к отсутствующему `ScrollPane`. Теперь `GuiState` объединяет запросы перестроения, а screen обрабатывает их перед следующими render/input/tick. Перестроение выполняется после завершения текущего callback; idle frames не пересоздают controls. При rebuild сбрасываются старые editor controls и dragging.
+
+## Проверки исправления
+
+С прежними локальными JDK 21 / Gradle 9.2.1, project-local cache/temp и IPv4 JVM options из команды ниже выполнено:
+
+```powershell
+.\gradlew.bat clean build --no-daemon --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp -Djava.net.preferIPv4Stack=true'
+git diff --check
+```
+
+- **BUILD SUCCESSFUL за 1m 11s; 15 tasks executed.** Весь test/clientTest/check, Java compilation, remapJar и verifyModJar прошли. Лог `.tools/validation-1.1.1-build.log`; Java compilation warnings/errors отсутствуют.
+- **218 tests: 139 core + 79 headless client; 0 failures/errors/skipped**, подсчитано из XML этой сборки. Четыре новых tests проверяют открытие редактора через настоящий ModuleRow между тиками для enabled/disabled, keyboard open/close, объединение запросов и сохранение запроса из callback rebuild. Bytecode contract проверяет, что actual Screen начинает render и все обработчики ввода с подготовки widgets. Это логическая/структурная проверка, не GPU drawing.
+- ZIP integrity / metadata audit PASS: production version `1.1.1-dev`, client-only, Minecraft **=1.21.11**. Прежние шесть OGG и audio origin manifest побайтно сохранены. Audit `.tools/validation-1.1.1-audit.json`.
+- `git diff --check` и whitespace/newline check новых Java files PASS. GLSL/resources в этом исправлении не менялись; shader validation предыдущей версии приведена ниже.
+
+## Готовый мод
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-1.1.1-dev.jar`** — remapped production JAR, **623764 bytes**. SHA-256: `37df3a3d47807e589a31cf30e9081973440ad8c617aafd357e92bfc42b6295b3`.
+
+Заменить предыдущий JAR, не устанавливать одновременно обе версии. Требования прежние: Minecraft **1.21.11**, Java **21+**, Fabric Loader **>=0.19.5**, Fabric API **>=0.141.6+1.21.11**. Sources/dev JAR не предназначен для установки.
+
+**Minecraft/runClient/computer-use не запускались.** Пользователю проверить: ПКМ / `>` на включённом и выключенном модуле, General, поиск → настройки, быстрое открытие/закрытие через Esc/X, слайдеры/sections/presets, Ctrl+F и прокрутку после возвращения из редактора. Реальный runtime и визуальное поведение этого исправления ещё не проверены.
+
+Commit/push/tag/release и изменения вне NexVisuals не выполнялись.
+
+---
+
+# История: NexVisuals 1.1.0-dev — 4 октября 2026
+
+Переработан текущий GUI в окна категорий; добавлен Local Trajectory. Цель остаётся **Minecraft Java Edition 1.21.11**, `gradle.properties: minecraft_version=1.21.11`, `fabric.mod.json: minecraft =1.21.11`. Прежние визуальные modules/Mixins/resources сохранены, новых сторонних модов/обязательных зависимостей нет.
+
+## Выполненные проверки 1.1
+
+Из `E:\Projects\nexvisuals`, существующие JDK 21 / Gradle Wrapper 9.2.1:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME=Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP=Join-Path (Get-Location) '.tools\tmp'
+$env:TMP=$env:TEMP
+$env:JAVA_TOOL_OPTIONS='-Djava.net.preferIPv4Stack=true'
+$env:JAVA_OPTS='-Djava.net.preferIPv4Stack=true'
+.\gradlew.bat clean build --no-daemon --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp -Djava.net.preferIPv4Stack=true'
+.\tools\validate_shaders.ps1
+git diff --check
+```
+
+- **Финальная clean build: BUILD SUCCESSFUL за 1m 13s, 15 tasks executed.** Main/client compilation, весь test/clientTest, remapJar/remapSourcesJar, check и verifyModJar прошли. Build output без Java warnings/errors; лог `.tools/validation-1.1-final-build.log`. Перед финальным сохранением порядка наложения окон также прошла clean build за 1m 16s.
+- **214 tests: 139 core + 75 headless client, 0 failures/errors/skipped.** Подсчитано из XML финальной сборки. Все прежние suites сохранены; добавлены 22 tests для air integration / bow charge / explicit movement / first block / uncertainty / caps / immutable snapshots, native force order, module defaults/presets, GUI layout/pagination/input/clipping/drag/resize/search и защита modal header от прокрученного native EditBox, config migration и profiles/restart. Это автоматическая логическая проверка, не визуальный запуск.
+- Сначала прошли отдельные Trajectory/Panel/Search suites с `-Xlint:deprecation` (локальный ignored init script `.tools/panels-lint.gradle`). Первичная compilation сообщала deprecated `hasChunkAt`; заменено проверкой native client chunk cache. Финальные targeted/full compilation не показывают этого warning.
+- Поздний billboard geometry test первоначально **FAILED** на наклонной камере: неверный знак двух компонент второго базисного вектора нарушал перпендикулярность. Формула исправлена; failed output сохранён в `.tools/validation-1.1-billboard-failed.log`. Тест оставлен в полном suite для horizontal/vertical/angled cases; выше указаны результаты повторной финальной сборки.
+- **GLSL compile/link / uniform layout PASS** для всех пяти прежних shader pairs с imports из actual Minecraft 1.21.11: SkyConfig 176, StarConfig 48, VisualConfig 272, BackgroundConfig 96, HighlightConfig 16 bytes. Лог `.tools/validation-1.1-shaders.log`; GPU/window не открывались, shader resources не менялись.
+- **Production audit PASS:** ZIP integrity, client-only metadata, exact MC target, новые GUI/Trajectory classes, существующие Mixins/shaders/presets/notice files. **Шесть предоставленных OGG + origin manifest** побайтно совпадают с прежними `.tools/user-sounds` resources. Audit `.tools/validation-1.1-audit.json`.
+- Native pipeline bytecode просмотрен отдельно: `RenderTypes.debugQuads` → `DEBUG_QUADS` / `DEBUG_FILLED_SNIPPET`, translucent blend, cull=false, depth write=false, inherited LEQUAL depth test. Это обычная occluded world geometry; GPU output по-прежнему требует ручной проверки.
+- `git diff --check` — PASS; новые untracked text files отдельно проверены на trailing whitespace / final newline. Пользовательская существующая правка README сохранена; внесены только актуальный JAR/requirements и описание нового GUI/Trajectory. `bin/` исключён как IDE output, файлы не удалялись.
+
+## Production JAR 1.1
+
+**`E:\Projects\nexvisuals\build\libs\nexvisuals-1.1.0-dev.jar`** — remapped production mod с существующими личными звуками, **623468 bytes**. SHA-256: `e1654e7c66b0e7daf91a09eb8fa6c10cb631906a0d8e5a690a56af239ce5b1f8`.
+
+Установить вместо предыдущей версии; `-sources.jar` / `build/devlibs` не являются install artifact. Требования: Minecraft **1.21.11**, Java **21+**, Fabric Loader **>=0.19.5**, Fabric API **>=0.141.6+1.21.11**. Sodium/Iris необязательны; дополнительных зависимостей нет. В этом проходе public audio variant не пересобирался; output 1.1 сохраняет прежние пользовательские clips, а обычный build без `userSoundResources` по-прежнему использует Minecraft event fallbacks.
+
+## Ручная проверка и ограничения 1.1
+
+**Minecraft/runClient/computer-use не запускались.** GUI readability, GPU rendering, фактическая точность полёта, FPS и совместимость Sodium/Iris не заявлены проверенными. Trajectory — local held-item **block-only estimate**, не entity-hit prediction или трекинг после выпуска; server RNG/изменённая физика не угадываются. Активный Iris pack приостанавливает этот pass с runtime сообщением. Настройки и ограничения перечислены в [панелях и траектории](panels-and-trajectory.md), там же конкретный checklist GUI/search/drag/presets/проектилей/неизвестных условий/профилей/restart/старых модулей.
+
+Commit/push/tag/release и изменения вне NexVisuals не выполнялись.
+
+---
+
+# История: NexVisuals 1.0.0 — 4 октября 2026
 
 Продолжение существующего проекта: Projectile Trails / Pickup HUD, индикация audio build mode, MIT metadata/notice и описание для публикации пользователем. Прежние исправления search/scroll, Viewmodel PvP/Cinematic, Swing/Weapon Trails и Player Trails сохранены. `gradle.properties`: **minecraft_version=1.21.11**, `mod_version=1.0.0`; production metadata требуют `minecraft: =1.21.11`.
 

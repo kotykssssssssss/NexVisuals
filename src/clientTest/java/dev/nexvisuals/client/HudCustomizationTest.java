@@ -85,6 +85,7 @@ class HudCustomizationTest {
             for(var entry:entries) if(entry.getAsJsonObject().has("sprite")) sprites.add(entry.getAsJsonObject().get("sprite").getAsString());
         }
             for(var shape:EffectParticle.Shape.values()) {
+                if(shape==EffectParticle.Shape.VANILLA) continue; // Uses Minecraft's installed generic_0 sprite.
                 String name=shape.name().toLowerCase(Locale.ROOT);assertTrue(sprites.contains("nexvisuals:"+name));
                 try(var png=getClass().getResourceAsStream("/assets/nexvisuals/textures/particle/"+name+".png")) {
                     assertNotNull(png);var image=javax.imageio.ImageIO.read(png);assertNotNull(image);assertEquals(128,image.getWidth());

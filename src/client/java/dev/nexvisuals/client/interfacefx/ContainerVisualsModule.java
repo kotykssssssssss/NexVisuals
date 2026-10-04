@@ -8,6 +8,7 @@ import dev.nexvisuals.core.setting.*;
 public final class ContainerVisualsModule extends VisualModule {
     public enum Opening { FADE, SCALE, SLIDE, NONE }
     public enum Motion { SLIDE, SMOOTH, ARC, POP, FADE }
+    public enum ClickStyle { FRAME, DOUBLE_FRAME, DIAMOND }
     public final ColorSetting panel = add(new ColorSetting("panel", "Panel tint", "Translucent tint over the vanilla panel, below its items and labels.", 0x30283D62));
     public final ColorSetting accent = add(new ColorSetting("accent", "Accent", "Outline, hover and click feedback ARGB.", 0xB87EDCFF));
     public final BooleanSetting outline = add(new BooleanSetting("outline", "Panel outline", "Decorative frame around the ordinary container.", true));
@@ -24,10 +25,26 @@ public final class ContainerVisualsModule extends VisualModule {
     public final DoubleSetting scale = add(new DoubleSetting("scale", "Ghost scale", "Scale of the cosmetic item copy only.", 1, .5, 1.5));
     public final DoubleSetting intensity = add(new DoubleSetting("intensity", "Motion intensity", "Arc height and pop strength.", 1, .1, 2));
     public final BooleanSetting afterimage = add(new BooleanSetting("afterimage", "Ghost outline", "A fading accent outline around the moving icon.", false));
+    public final EnumSetting<ClickStyle> clickStyle=add(new EnumSetting<>("click_style","Click shape","Original frame, paired expanding frames, or a small diamond ripple.",ClickStyle.FRAME,ClickStyle.class));
+    public final DoubleSetting clickSpread=add(new DoubleSetting("click_spread","Click expansion","GUI pixels of cosmetic expansion, multiplied by motion intensity.",6,0,12));
+    public final DoubleSetting clickOpacity=add(new DoubleSetting("click_opacity","Click opacity","Alpha multiplier; actual slot contents are unaffected.",1,0,1));
+    public final IntSetting clickThickness=add(new IntSetting("click_thickness","Click thickness","Pixel outline thickness.",1,1,3));
+    public final DoubleSetting clickDuration=add(new DoubleSetting("click_duration","Click lifetime multiplier","Independent lifetime for source-slot reactions; transfers keep Animation duration.",1,.5,2));
+    public final BooleanSetting clickGradient=add(new BooleanSetting("click_gradient","Click color gradient","Interpolate from the container accent to the end color over life.",false));
+    public final ColorSetting clickEnd=add(new ColorSetting("click_end","Click end color","ARGB end of the optional gradient.",0x608EABE0));
     public ContainerVisualsModule() {
         super("container_visuals", "Container Visuals", "Shared panel, hover, click and observed quick-move feedback. No inventory automation.", Category.INTERFACE);
         preset("Clean", "Subtle blue tint and fast slot reactions.", "opening", "FADE", "motion", "SMOOTH", "duration", 140);
         preset("Aurora", "A violet frame with arc transfers.", "panel", "#383D284F", "accent", "#C0B299FF", "opening", "SCALE", "motion", "ARC");
         preset("Snap", "Short sliding frame and pop reactions.", "opening", "SLIDE", "motion", "POP", "duration", 100);
+        group("Panel",panel,accent,outline,rounding,opening,duration,easing);
+        group("Slots",hover,slotTint,slotOutline);
+        group("Click feedback",clicks,clickStyle,clickSpread,clickOpacity,clickThickness,clickDuration,clickGradient,clickEnd);
+        group("Transfers",transfers,motion,scale,intensity,afterimage);
+        for(var s:new Setting<?>[]{clickStyle,clickSpread,clickOpacity,clickThickness,clickDuration,clickGradient}) s.visibleWhen(clicks::get);
+        clickEnd.visibleWhen(()->clicks.get()&&clickGradient.get());
+        for(var s:new Setting<?>[]{motion,scale,intensity,afterimage}) s.visibleWhen(transfers::get);
+        preset("Crystal Touch","Diamond click ripples and a quiet blue-to-violet fade.","click_style","DIAMOND","click_gradient",true,"click_duration",1.2,"opening","FADE","motion","SMOOTH");
+        preset("Double Echo","Two short expanding slot frames; contents and hit areas remain vanilla.","click_style","DOUBLE_FRAME","click_spread",8,"duration",160,"click_opacity",.85);
     }
 }

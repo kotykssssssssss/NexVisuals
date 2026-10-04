@@ -4,6 +4,7 @@ import dev.nexvisuals.client.module.HudModule;
 import dev.nexvisuals.client.particle.CosmeticParticlesModule;
 import dev.nexvisuals.client.particle.EffectEmitter;
 import dev.nexvisuals.client.particle.EffectParticle;
+import dev.nexvisuals.client.particle.ParticleAppearance;
 import dev.nexvisuals.core.animation.Easing;
 import net.minecraft.world.phys.Vec3;
 import dev.nexvisuals.client.render.Draw;
@@ -22,7 +23,7 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
     private final BooleanSetting particles = add(new BooleanSetting("particles", "World effect", "Draw cosmetic feedback at the visible local attack point.", true));
     private final ColorSetting primary = add(new ColorSetting("primary", "Primary color", "ARGB including opacity.", 0xEE78D9FF));
     private final ColorSetting secondary = add(new ColorSetting("secondary", "Secondary color", "Color reached near the end of the effect.", 0xCCBA8CFF));
-    private final DoubleSetting size = add(new DoubleSetting("size", "Effect size", "World-space radius multiplier.", 1, .2, 3));
+    private final DoubleSetting size = add(new DoubleSetting("size", "Effect size", "World-space radius multiplier.", 1.18, .2, 3));
     private final DoubleSetting intensity = add(new DoubleSetting("intensity", "Intensity", "Multiplies emission count, with a shared hard budget.", 1, .1, 2));
     private final DoubleSetting opacity = add(new DoubleSetting("opacity", "Effect opacity", "Multiplies the alpha of both world-effect colors.", 1, 0, 1));
     private final EnumSetting<ScaleMode> scaling = add(new EnumSetting<>("scale_animation", "Scale animation", "Keep the preset's motion or override how its shapes change size.", ScaleMode.PRESET, ScaleMode.class));
@@ -46,6 +47,7 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
     private final CosmeticParticlesModule particleStyle;
     private final EffectEmitter emitter;
     private long lastEmission;
+    public final ParticleAppearance appearance;
     public HitVisualsModule(CosmeticParticlesModule particleStyle, EffectEmitter emitter) {
         super("hit_visuals", "Hit Effects", "Expressive effects for a visible local attack attempt, not confirmed server damage.", Category.COMBAT);
         this.particleStyle = particleStyle;
@@ -57,6 +59,17 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
         preset("Impact", "Star flash, expanding shock ring and radial sparks.", "preset", "IMPACT", "flash", .035);
         preset("Hearts", "Upright pink hearts rise and drift outward, gently shrinking.", "preset", "HEARTS", "primary", "#FFF58FB5", "secondary", "#AAE464D0", "speed", .08, "gravity", -.15, "lifetime", 28, "amount", 12, "random_rotation", false);
         preset("Pixels", "Crisp square fragments tumble outward with quick decay.", "preset", "PIXELS", "primary", "#FF8AEEFF", "secondary", "#BB907CFF", "speed", .18, "gravity", .65, "lifetime", 14, "amount", 28);
+        preservePresetDefaults("size", 1);
+        if(groups().isEmpty()) group("General",settings().toArray(Setting<?>[]::new));
+        appearance=new ParticleAppearance(this::add,ParticleAppearance.Kind.FREE);
+        appearance.glow.visibleWhen(glow::get);
+        group("Particle colors",appearance.colors());
+        group("Particle motion",appearance.motion());
+        group("Particle advanced",appearance.advanced());
+        preset("Clean Plus", "Refined size, motion and palette; fully editable.", "preset", "BURST", "amount", 16, "size", 1.15, "speed", 0.11, "primary", "#EEA9E9FF");
+        preset("Energy Bloom", "Refined size, motion and palette; fully editable.", "preset", "IMPACT", "size", 1.25, "amount", 20, "particle_color_mode", "GRADIENT", "particle_envelope", true, "particle_fade_in", 0.06, "particle_fade_out", 0.5);
+        preset("Critical Stars", "Refined size, motion and palette; fully editable.", "preset", "SPARKS", "particle_shape", "STAR", "size", 1.2, "primary", "#FFF7D690", "secondary", "#AAEF956F", "particle_size_variance", 0.15, "particle_lifetime_variance", 0.1);
+
     }
     public void attacked(Minecraft client, Vec3 position) {
         if (!enabled() || client.level == null) return;
@@ -65,7 +78,8 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
         lastEmission = now; attackNanos = now; attackLevel = client.level;
         if (!particles.get()) return;
         if (style.get() == Style.CLASSIC) { particleStyle.burst(client, position, this::enabled); return; }
-        float angle = rotate.get() ? client.level.random.nextFloat() * (float) (Math.PI * 2) : 0;
+        double randomness=appearance.randomness.get();
+        float angle = rotate.get() ? client.level.random.nextFloat() * (float) (Math.PI * 2*randomness) : 0;
         switch (style.get()) {
             case RINGS -> {
                 emit(client, position, EffectParticle.Shape.RING, .48f, 0, 0, 0, EffectParticle.Scaling.EXPAND, angle, 0);
@@ -86,7 +100,8 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
         int count = Math.min(96, Math.max(1, (int) (amount.get() * intensity.get() * (core ? 1 : .5))));
         for (int i = 0; i < count; i++) {
             var random = client.level.random;
-            double azimuth = random.nextDouble() * Math.PI * 2, elevation = random.nextDouble() * 2 - 1;
+            double azimuth = i*2.39996323*(1-randomness)+random.nextDouble()*Math.PI*2*randomness;
+            double elevation = (1-2*(i+.5)/count)*(1-randomness)+(random.nextDouble()*2-1)*randomness;
             double radial = Math.sqrt(1 - elevation * elevation), dx = Math.cos(azimuth) * radial, dz = Math.sin(azimuth) * radial;
             Vec3 start = position.add(dx * spread.get(), elevation * spread.get(), dz * spread.get());
             boolean spark = style.get() == Style.SPARKS || style.get() == Style.IMPACT;
@@ -98,7 +113,7 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
             boolean hearts=style.get()==Style.HEARTS;
             emit(client, start, shape, hearts ? .19f : spark ? .16f : .13f,
                     dx * speed.get(), (hearts ? Math.abs(elevation)+.3 : elevation) * speed.get(), dz * speed.get(), EffectParticle.Scaling.SHRINK,
-                    rotate.get() ? random.nextFloat() * 6.283f : 0, spark || rotate.get() && style.get()==Style.PIXELS ? .06f : 0);
+                    rotate.get() ? random.nextFloat() * (float)(6.283*randomness) : 0, spark || rotate.get() && style.get()==Style.PIXELS ? .06f : 0);
         }
     }
     private void emit(Minecraft client, Vec3 p, EffectParticle.Shape shape, float baseSize, double dx, double dy, double dz,
@@ -107,7 +122,7 @@ public final class HitVisualsModule extends VisualModule implements HudModule {
         if (scaling.get() != ScaleMode.PRESET) scale = EffectParticle.Scaling.valueOf(scaling.get().name());
         emitter.emit(client, p, dx, dy, dz, shape, baseSize * size.get().floatValue(), Draw.withAlpha(primary.get(), opacity.get().floatValue()),
                 Draw.withAlpha(secondary.get(), opacity.get().floatValue()), lifetime.get(),
-                detail ? gravity.get().floatValue() : 0, fade.get(), glow.get(), scale, easing.get(), rotation, spin, this::enabled);
+                detail ? gravity.get().floatValue() : 0, fade.get(), glow.get(), scale, easing.get(), rotation, spin, this::enabled, appearance);
     }
     @Override public boolean renderHud(Minecraft client, GuiGraphics graphics, DeltaTracker deltaTracker) {
         if (client.player == null || client.level != attackLevel || attackNanos == 0 || client.screen != null) return false;

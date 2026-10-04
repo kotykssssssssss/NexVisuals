@@ -19,3 +19,5 @@ crash-reports/
 Thumbs.db
 .tools/
 
+# Java language-server / IDE compiled output
+bin/

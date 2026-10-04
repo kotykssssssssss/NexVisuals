@@ -12,6 +12,8 @@ layout(std140) uniform SkyConfig {
     vec4 GlowColor;
     vec4 DayAtmosphere;
     vec4 SunColor;
+    vec4 Meteor;
+    vec4 MeteorTint;
 };
 in vec3 skyDirection;
 out vec4 fragColor;
@@ -59,15 +61,15 @@ void main() {
     if(Details.y>0.0 && visible>0.001) {
         // One bounded meteor per interval; no particle list or world-position history.
         float age=mod(Gradient.w,Details.y), cycle=floor(Gradient.w/Details.y);
-        if(age<1.3) {
+        if(age<Meteor.z) {
             float start=hash3(vec3(cycle,4,2))*6.2831853-3.14159265;
-            float angle=atan(d.z,d.x)-start-age*.42;
+            float angle=atan(d.z,d.x)-start-age*.42*Meteor.w;
             angle=atan(sin(angle),cos(angle));
-            vec2 p=vec2(angle,asin(clamp(d.y,-1.0,1.0))-(.72-age*.20));
+            vec2 p=vec2(angle,asin(clamp(d.y,-1.0,1.0))-(.72-age*.20*Meteor.w));
             vec2 tail=vec2(-.18,.086);
             float t=clamp(dot(p,tail)/dot(tail,tail),0.0,1.0);
-            float line=exp(-length(p-tail*t)*330.0)*(1.0-t);
-            color += vec3(.7,.82,1.0)*line*sin(age/1.3*3.14159265)*visible;
+            float line=exp(-length(p-tail*t)*330.0/Meteor.x)*(1.0-t);
+            color += vec3(.7,.82,1.0)*MeteorTint.rgb*MeteorTint.a*line*sin(age/Meteor.z*3.14159265)*visible*Meteor.y;
         }
     }
     color=mix(color,FogColor.rgb,(1.0-rain)*.5);

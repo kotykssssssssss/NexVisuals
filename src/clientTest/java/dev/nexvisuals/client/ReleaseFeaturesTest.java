@@ -25,7 +25,7 @@ class ReleaseFeaturesTest {
                 assertEquals(preset.name(), module.currentPresetName());
                 assertTrue(recipes.add(config.snapshot()));
             }
-            assertEquals(3, recipes.size());
+            assertEquals(module.presets().size(), recipes.size());
         }
     }
     @Test void newSettingsSurviveConfigRestartProfilesAndDefaultReset() throws Exception {

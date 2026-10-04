@@ -10,6 +10,7 @@ import dev.nexvisuals.core.module.Category;
 import dev.nexvisuals.core.module.ModuleRegistry;
 import dev.nexvisuals.core.module.VisualModule;
 import dev.nexvisuals.core.setting.Setting;
+import dev.nexvisuals.core.ui.PanelPosition;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.CharacterCodingException;
@@ -99,6 +100,18 @@ public final class ConfigManager {
                 if (selected != null && selected.isJsonPrimitive() && selected.getAsJsonPrimitive().isString()) {
                     registry.find(selected.getAsString()).ifPresent(module -> globals.setSelectedModule(module.id()));
                 }
+                JsonObject panels=object(gui,"panels",warnings);
+                if(panels!=null) for(Category category:Category.values()) {
+                    JsonObject panel=object(panels,category.name(),warnings);
+                    if(panel==null) continue;
+                    try {
+                        var x=panel.get("x"); var y=panel.get("y"); var folded=panel.get("collapsed");
+                        if(x==null || y==null || folded==null || !x.isJsonPrimitive() || !x.getAsJsonPrimitive().isNumber()
+                                || !y.isJsonPrimitive() || !y.getAsJsonPrimitive().isNumber() || !folded.isJsonPrimitive() || !folded.getAsJsonPrimitive().isBoolean())
+                            throw new IllegalArgumentException("Expected numeric x/y and boolean collapsed");
+                        globals.setPanelPosition(category,new PanelPosition(x.getAsDouble(),y.getAsDouble(),folded.getAsBoolean()));
+                    } catch(RuntimeException exception) { warnings.add("gui.panels."+category.name()+": invalid layout; using automatic placement"); }
+                }
             }
         }
         return List.copyOf(warnings);
@@ -136,6 +149,14 @@ public final class ConfigManager {
             JsonObject gui = new JsonObject();
             gui.addProperty("category", globals.selectedCategory().name());
             gui.addProperty("module", globals.selectedModule());
+            if(!globals.panelPositions().isEmpty()) {
+                JsonObject panels=new JsonObject();
+                globals.panelPositions().forEach((category,position)->{
+                    JsonObject panel=new JsonObject(); panel.addProperty("x",position.x()); panel.addProperty("y",position.y()); panel.addProperty("collapsed",position.collapsed());
+                    panels.add(category.name(),panel);
+                });
+                gui.add("panels",panels);
+            }
             root.add("gui", gui);
         }
 

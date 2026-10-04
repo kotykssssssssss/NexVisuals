@@ -28,7 +28,7 @@ final class LiveBackgroundRenderer implements AutoCloseable {
     private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("nexvisuals",path); }
     void render(Minecraft client,GuiGraphics graphics,double phase,boolean queued) {
         if(!RenderSystem.getDevice().precompilePipeline(PIPELINE).isValid()) throw new IllegalStateException("Cannot compile NexVisuals live_background");
-        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals background settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,96);
+        if(uniforms==null) uniforms=new MappableRingBuffer(()->"NexVisuals background settings",GpuBuffer.USAGE_UNIFORM|GpuBuffer.USAGE_MAP_WRITE,128);
         RenderTarget target=client.getMainRenderTarget();
         if(queued) {
             int width=Math.max(1,(target.width+1)/2),height=Math.max(1,(target.height+1)/2);
@@ -45,6 +45,8 @@ final class LiveBackgroundRenderer implements AutoCloseable {
             u.putVec4(module.style.get().ordinal(),(float)(phase%36000),module.motion.get().floatValue(),module.softness.get().floatValue());
             u.putVec4(module.intensity.get().floatValue(),module.brightness.get().floatValue(),module.saturation.get().floatValue(),module.dim.get().floatValue());
             u.putVec4((float)target.width/Math.max(1,target.height),module.particles.get(),target.width,target.height);
+            u.putVec4(module.moteSize.get().floatValue(),module.moteOpacity.get().floatValue(),module.moteSpeed.get().floatValue(),module.moteTwinkle.get().floatValue());
+            color(u,module.moteAccent.get()?module.accent.get():module.moteColor.get());
         }
         try(var pass=encoder.createRenderPass(()->"NexVisuals live wallpaper",target.getColorTextureView(),OptionalInt.empty())) {
             pass.setPipeline(PIPELINE);

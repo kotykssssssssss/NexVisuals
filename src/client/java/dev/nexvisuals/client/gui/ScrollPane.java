@@ -9,7 +9,7 @@ import java.util.List;
 
 /** Widgets keep their identity while scrolling, so text selection and edit drafts are retained. */
 final class ScrollPane {
-    final GuiLayout.Rect area;
+    GuiLayout.Rect area;
     private final List<Entry> entries = new ArrayList<>();
     private final List<Decoration> decorations = new ArrayList<>();
     private int scroll;
@@ -20,6 +20,7 @@ final class ScrollPane {
     void add(AbstractWidget widget, int offset) {
         entries.add(new Entry(widget, offset));
         if (widget instanceof NexButton button) button.clipped(area);
+        if (widget instanceof ModuleRow row) row.clipped(area);
         contentHeight = Math.max(contentHeight, offset + widget.getHeight() + 6);
         position();
     }
@@ -30,6 +31,20 @@ final class ScrollPane {
     }
 
     int scroll() { return scroll; }
+    void moveTo(GuiLayout.Rect next) {
+        int dx=next.x()-area.x(); area=next;
+        for(Entry entry:entries) {
+            entry.widget.setX(entry.widget.getX()+dx);
+            if(entry.widget instanceof NexButton button) button.clipped(area);
+            if(entry.widget instanceof ModuleRow row) row.clipped(area);
+        }
+        position();
+    }
+    AbstractWidget click(net.minecraft.client.input.MouseButtonEvent event,boolean twice) {
+        if(!area.contains(event.x(),event.y())) return null;
+        for(Entry entry:entries) if(entry.widget.mouseClicked(event,twice)) return entry.widget;
+        return null;
+    }
     void scrollBy(int amount) { scroll = Math.clamp(scroll + amount, 0, maxScroll()); position(); }
     private int maxScroll() { return Math.max(0, contentHeight - area.height()); }
     private void position() {

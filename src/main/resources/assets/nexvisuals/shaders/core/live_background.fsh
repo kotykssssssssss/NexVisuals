@@ -6,6 +6,8 @@ layout(std140) uniform BackgroundConfig {
     vec4 Shape;
     vec4 Grade;
     vec4 View;
+    vec4 Motes;
+    vec4 MoteColor;
 };
 in vec2 texCoord;
 out vec4 fragColor;
@@ -58,13 +60,13 @@ void main() {
     }
     if(View.y>0.0) {
         // Bounded procedural grid: cost does not grow with the requested number of motes.
-        vec2 grid=vec2(12,6),q=(uv+vec2(0,t*.006*move))*grid;
+        vec2 grid=vec2(12,6),q=(uv+vec2(0,t*.006*move*Motes.z))*grid;
         vec2 cell=floor(q),f=fract(q);
         float seed=hash(cell);
         vec2 center=vec2(.15+.7*seed,.15+.7*hash(cell+17.0));
         vec2 delta=(f-center)/grid*vec2(View.x,1.0);
-        float dotGlow=exp(-dot(delta,delta)/.00006);
-        color+=c*dotGlow*step(seed,View.y/72.0)*(.045+.045*sin(t*.3+seed*6.28));
+        float dotGlow=exp(-dot(delta,delta)/(.00006*Motes.x*Motes.x));
+        color+=MoteColor.rgb*MoteColor.a*dotGlow*step(seed,View.y/72.0)*.045*(1.0+Motes.w*sin(t*.3+seed*6.28))*Motes.y;
     }
     color=mix(vec3(.003,.006,.012),color,Grade.x)*Grade.y;
     float luma=dot(color,vec3(.2126,.7152,.0722));

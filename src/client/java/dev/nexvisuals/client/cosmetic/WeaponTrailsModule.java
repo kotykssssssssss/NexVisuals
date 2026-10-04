@@ -41,6 +41,8 @@ public final class WeaponTrailsModule extends VisualModule {
     private long now;
     private long settingRevision=Long.MIN_VALUE;
     private String status="";
+    private final dev.nexvisuals.client.particle.ParticlePalette palette;
+    private final DoubleSetting fadePower=add(new DoubleSetting("fade_power","Tail fade curve","Lower values keep the ribbon readable longer; higher values soften its tail. No extra samples.",2,.5,4));
 
     public WeaponTrailsModule() {
         super("weapon_trails","Weapon Trails","Short first-person sword/axe sweeps following your configured hand motion. Blade probes can be calibrated for item models.",Category.VIEWMODEL);
@@ -49,6 +51,11 @@ public final class WeaponTrailsModule extends VisualModule {
         preset("Frost","Longer pale blue sweep.","primary","#BBE8FAFF","secondary","#3379ABFF","lifetime",190);
         group("Appearance",primary,secondary,lifetime,coverage,smoothness,offhand);
         group("Blade alignment",alignment,baseX,baseY,baseZ,tipX,tipY,tipZ);
+        group("Tail motion",fadePower);
+        palette=new dev.nexvisuals.client.particle.ParticlePalette(this::add);
+        group("Colors",palette.settings());
+        preset("Pearl Sweep","A restrained, more persistent pale sweep with softened edges.","primary","#CCE6F5FF","secondary","#55549BAF","lifetime",180,"fade_power",1.4,"coverage",.55);
+        preset("Accent Edge","A short clean blade trace using your interface accent.","color_mode","THEME","lifetime",120,"coverage",.45,"opacity",.85,"fade_power",1.5);
     }
     private DoubleSetting number(String id,String label,double value) {
         return add(new DoubleSetting(id,label,"Legacy hand-space probe. Auto uses these when edited; reset them to follow the model again. This is not a hitbox.",value,-1.5,1.5));
@@ -114,7 +121,10 @@ public final class WeaponTrailsModule extends VisualModule {
     public void end(SubmitNodeCollector collector) {
         WeaponSweep sweep=pending;pending=null;recording=false;
         if(sweep==null) return;
-        RibbonMesh mesh=RibbonMesh.sweep(sweep.history(),now,lifetime.get(),primary.get(),secondary.get(),smoothness.get());
+        var mod=dev.nexvisuals.client.NexVisualsClient.instance();int accent=mod==null?0xFF8B9DFF:mod.accentColor();
+        int start=palette.color(primary.get(),secondary.get(),0,now/1000.,accent);
+        int end=palette.color(primary.get(),secondary.get(),1,now/1000.,accent);
+        RibbonMesh mesh=RibbonMesh.sweep(sweep.history(),now,lifetime.get(),start,end,smoothness.get(),fadePower.get());
         if(mesh.vertices()==0) return;
         // Positions already contain this hand's transforms. The queue captures an identity pose and immutable mesh.
         collector.submitCustomGeometry(identity,RenderTypes.debugQuads(),(matrix,vertices)->{

@@ -109,7 +109,7 @@ tasks.register('verifyModJar') {
             assert !json.entrypoints.containsKey('main') && !json.entrypoints.containsKey('server')
             def mixins = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('nexvisuals.client.mixins.json')))
             mixins.client.each { name -> assert zip.getEntry(mixins.package.replace('.', '/') + '/' + name + '.class') != null }
-            ['orb', 'spark', 'ring', 'slash', 'star', 'footprint', 'heart', 'pixel'].each { shape ->
+            ['orb', 'spark', 'ring', 'slash', 'star', 'footprint', 'heart', 'pixel', 'dot', 'diamond', 'streak'].each { shape ->
                 assert zip.getEntry('assets/nexvisuals/textures/particle/' + shape + '.png') != null
             }
             ['clean', 'aurora', 'cinematic'].each { preset -> assert zip.getEntry('nexvisuals/presets/' + preset + '.json') != null }

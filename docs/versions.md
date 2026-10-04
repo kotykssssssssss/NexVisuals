@@ -13,7 +13,9 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Текущая версия NexVisuals — `1.0.0`. Добавлены Projectile Trails / Pickup HUD; сохранены предрелизные исправления поиска, Viewmodel PvP/Cinematic, Item Swing/Weapon Trails и Player Trails. Стек Minecraft/Fabric не менялся; adapters проверяются по bytecode строго **1.21.11**. Rendering использует штатные Fabric lifecycle hooks, Minecraft particles/buffers и существующий HUD framework. Новых обязательных зависимостей нет. Подготовлены два локальных артефакта: личный с предоставленными звуками и публичный с vanilla event fallbacks. Публикацию выполняет пользователь. [Описание](../RELEASE_NOTES.md), [новые модули](release-features.md); visual/runtime-проверки оставлены пользователю.
+Текущая версия NexVisuals — `1.2.0-dev`: [particle polish](particle-polish.md), новые рецепты, Consumption FX и Rain Ripples. Сохранены category panels GUI, исправление lifecycle из 1.1.1-dev, Local Trajectory и остальные системы. Стек Minecraft/Fabric не менялся; новых обязательных зависимостей и Mixins нет. Старые пресеты, звуки, config/schema 1 и profiles сохранены. [Проверки и production JAR](validation.md); visual/runtime-проверки оставлены пользователю.
+
+Предыдущий выпуск `1.0.0` добавил Projectile Trails / Pickup HUD и подготовил отдельные personal/public audio artifacts: [описание](../RELEASE_NOTES.md), [модули](release-features.md). Это исторические артефакты 1.0, не текущий build output.
 
 Проверено 28 сентября 2026 года. Источники:
 

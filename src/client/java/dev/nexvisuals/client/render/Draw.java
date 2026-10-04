@@ -49,6 +49,17 @@ public final class Draw {
         graphics.drawString(font, text, x, y, argb, shadow);
     }
 
+    /** Small bounded pixel diamond, using the same native GUI fill submission as other feedback. */
+    public static void diamondOutline(GuiGraphics g,int cx,int cy,int radius,int thickness,int argb) {
+        int r=Math.clamp(radius,1,32),t=Math.clamp(thickness,1,3);
+        if((argb>>>24)==0) return;
+        for(int dy=-r;dy<=r;dy++) {
+            int half=r-Math.abs(dy),span=Math.min(t,half+1);
+            rect(g,cx-half,cy+dy,span,1,argb);
+            if(half*2+1>span) rect(g,cx+Math.max(1,half-span+1),cy+dy,Math.min(span,half),1,argb);
+        }
+    }
+
     /** Multiply existing alpha, so fading a translucent panel does not make it opaque. */
     public static int withAlpha(int argb, float opacity) {
         float clamped = Float.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : 0;

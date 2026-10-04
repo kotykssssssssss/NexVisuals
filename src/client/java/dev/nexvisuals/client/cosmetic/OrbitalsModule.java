@@ -13,19 +13,30 @@ public final class OrbitalsModule extends VisualModule {
     private final EnumSetting<Style> style=add(new EnumSetting<>("style","Path","A horizontal crown, intersecting tilted orbits or a vertical spiral.",Style.ATOM,Style.class));
     private final ColorSetting primary=add(new ColorSetting("primary","Primary","ARGB with opacity.",0xDD98EEFF));
     private final ColorSetting secondary=add(new ColorSetting("secondary","Secondary","Alternating orbit color.",0xBBB894FF));
-    private final IntSetting count=add(new IntSetting("count","Orbit points","At most twelve points, emitted every two ticks and removed after four ticks.",6,3,12));
+    private final IntSetting count=add(new IntSetting("count","Orbit points","At most twelve points, emitted every two ticks. Point persistence controls their expiration.",6,3,12));
     private final DoubleSetting radius=add(new DoubleSetting("radius","Radius","Distance from the local body in blocks.",.8,.3,1.6));
     private final DoubleSetting height=add(new DoubleSetting("height","Height","Center of the pattern above the player's feet.",1.1,.3,2.4));
-    private final DoubleSetting size=add(new DoubleSetting("size","Size","Star radius in blocks.",.09,.025,.22));
+    private final DoubleSetting size=add(new DoubleSetting("size","Size","Star radius in blocks.",0.11,.025,.22));
     private final DoubleSetting speed=add(new DoubleSetting("speed","Orbit speed","Turns per second, calculated from world time.",.12,.02,.5));
     private final EffectEmitter emitter;
     private final BooleanSupplier active=this::enabled;
+    public final ParticleAppearance appearance;
+    private final IntSetting lifetime=add(new IntSetting("lifetime","Point persistence","Ticks; short overlapping samples form the orbit. Maximum twelve ticks.",4,2,12));
     public OrbitalsModule(EffectEmitter emitter) {
         super("cosmetic_orbitals","Cosmetic Orbitals","Small moving constellations around the visible local player in third person. Ordinary depth; no remote entities.",Category.WORLD);
         this.emitter=emitter;
         preset("Atom","Intersecting cool tilted orbits.");
         preset("Starlight Crown","A slow golden crown above the head.","style","CROWN","height",2.1,"radius",.5,"primary","#FFF9DE95","secondary","#BBFFFFFF","speed",.06);
         preset("Spiral","A violet spiral around the body.","style","HELIX","count",10,"radius",.65,"primary","#DDD0A0FF","secondary","#BB70DAFF");
+        preservePresetDefaults("size", 0.09);
+        if(groups().isEmpty()) group("General",settings().toArray(Setting<?>[]::new));
+        appearance=new ParticleAppearance(this::add,ParticleAppearance.Kind.AMBIENT);
+        group("Particle colors",appearance.colors());
+        group("Particle motion",appearance.motion());
+        group("Particle advanced",appearance.advanced());
+        preset("Pearl Orbits", "Refined size, motion and palette; fully editable.", "size", 0.11, "particle_shape", "SOFT", "primary", "#EEE7EDFF", "secondary", "#BBA3C9D8");
+        preset("Crystal Crown", "Refined size, motion and palette; fully editable.", "style", "CROWN", "height", 2.1, "radius", 0.55, "size", 0.1, "particle_shape", "DIAMOND", "particle_rotation", 30);
+
     }
     public void tick(Minecraft client) {
         if(!enabled() || client.level==null || client.player==null || client.isPaused() || client.player.isSpectator()
@@ -39,8 +50,8 @@ public final class OrbitalsModule extends VisualModule {
                 case HELIX -> y=((double)i/(count.get()-1)-.5)*1.5;
                 case CROWN -> { }
             }
-            emitter.emit(client,center.add(x,y,z),0,0,0,EffectParticle.Shape.STAR,size.get().floatValue(),i%2==0?primary.get():secondary.get(),
-                    secondary.get(),4,0,true,true,EffectParticle.Scaling.PULSE,Easing.LINEAR,(float)a,.03f,active);
+            emitter.emit(client,center.add(x,y,z),0,0,0,EffectParticle.Shape.STAR,size.get().floatValue(),appearance.componentColor(primary.get(),i%2==0?primary.get():secondary.get()),
+                    secondary.get(),lifetime.get(),0,true,true,EffectParticle.Scaling.PULSE,Easing.LINEAR,(float)a,.03f,active,appearance);
         }
     }
 }

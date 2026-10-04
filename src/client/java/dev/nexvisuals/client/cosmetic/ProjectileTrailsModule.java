@@ -2,6 +2,7 @@ package dev.nexvisuals.client.cosmetic;
 
 import dev.nexvisuals.client.particle.EffectEmitter;
 import dev.nexvisuals.client.particle.EffectParticle;
+import dev.nexvisuals.client.particle.ParticleAppearance;
 import dev.nexvisuals.core.animation.Easing;
 import dev.nexvisuals.core.module.Category;
 import dev.nexvisuals.core.module.VisualModule;
@@ -32,7 +33,7 @@ public final class ProjectileTrailsModule extends VisualModule {
     private final BooleanSetting own = add(new BooleanSetting("own_only", "Own projectiles only", "Requires the client to know the owner. Unknown owners are skipped, never guessed.", false));
     private final ColorSetting primary = add(new ColorSetting("primary", "Primary", "ARGB including opacity.", 0xD98AEAFF));
     private final ColorSetting secondary = add(new ColorSetting("secondary", "Secondary", "Fading tail color.", 0x70C59BFF));
-    private final DoubleSetting size = add(new DoubleSetting("size", "Size", "Cosmetic particle radius.", .075, .025, .2));
+    private final DoubleSetting size = add(new DoubleSetting("size", "Size", "Cosmetic particle radius.", 0.095, .025, .2));
     private final IntSetting density = add(new IntSetting("density", "Density", "Samples per block, at most eight per projectile and 48 total per tick.", 4, 1, 12));
     private final IntSetting lifetime = add(new IntSetting("lifetime", "Lifetime", "Particle lifetime in ticks.", 16, 4, 40));
     private final IntSetting distance = add(new IntSetting("distance", "Distance", "Maximum distance from your player; walls always interrupt emission.", 32, 8, 64));
@@ -43,6 +44,7 @@ public final class ProjectileTrailsModule extends VisualModule {
     private boolean seeded;
     private record Tracked(Projectile entity, MotionTrail path) { }
 
+    public final ParticleAppearance appearance;
     public ProjectileTrailsModule(EffectEmitter emitter) {
         super("projectile_trails", "Projectile Trails", "Comets, sparks and halos behind already visible projectiles. No trajectory prediction or hidden-entity tracking.", Category.PARTICLES);
         this.emitter = emitter;
@@ -51,6 +53,15 @@ public final class ProjectileTrailsModule extends VisualModule {
         preset("Pearl Halos", "Spaced expanding circles behind pearls.", "style", "HALOS", "arrows", false, "density", 1, "size", .12, "lifetime", 20);
         group("Projectiles", pearls, arrows, thrown, own, distance);
         group("Appearance", style, primary, secondary, size, density, lifetime);
+        preservePresetDefaults("size", 0.075);
+        if(groups().isEmpty()) group("General",settings().toArray(Setting<?>[]::new));
+        appearance=new ParticleAppearance(this::add,ParticleAppearance.Kind.FREE);
+        group("Particle colors",appearance.colors());
+        group("Particle motion",appearance.motion());
+        group("Particle advanced",appearance.advanced());
+        preset("Comet Plus", "Refined size, motion and palette; fully editable.", "size", 0.095, "density", 4, "particle_envelope", true, "particle_fade_in", 0.05, "particle_fade_out", 0.55);
+        preset("Crystal Flight", "Refined size, motion and palette; fully editable.", "size", 0.09, "particle_shape", "DIAMOND", "particle_rotation", 45, "density", 3, "primary", "#EEBDEAFF", "secondary", "#888F9DD9");
+
     }
 
     private boolean supported(Entity entity) { return entity instanceof AbstractArrow || entity instanceof ThrowableItemProjectile; }
@@ -111,7 +122,7 @@ public final class ProjectileTrailsModule extends VisualModule {
                 spark ? EffectParticle.Shape.SPARK : halo ? EffectParticle.Shape.RING : EffectParticle.Shape.ORB,
                 size.get().floatValue(), primary.get(), secondary.get(), lifetime.get(), spark ? .12f : 0,
                 true, true, halo ? EffectParticle.Scaling.EXPAND : EffectParticle.Scaling.SHRINK, Easing.OUT_CUBIC,
-                0, spark ? .1f : 0, active);
+                0, spark ? .1f : 0, active, appearance);
     }
 
     private void clear() { tracked.clear(); level = null; seeded = false; }

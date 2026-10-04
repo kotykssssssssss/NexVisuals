@@ -24,6 +24,12 @@ public final class ConsoleMenuModule extends VisualModule {
     public final ColorSetting text = add(new ColorSetting("text", "Text color", "Button labels; vanilla Minecraft font is retained.", 0xFFF4F0DD));
     public final ColorSetting skyTint = add(new ColorSetting("sky_tint", "Panorama tint", "ARGB overlay on the original resource-pack panorama; alpha controls tint strength.", 0x183D6134));
     public final BooleanSetting pixels = add(new BooleanSetting("pixels", "Drifting pixels", "A few slow, block-shaped motes over the panorama.", true));
+    public final IntSetting pixelAmount=add(new IntSetting("pixel_amount","Pixel amount","At most 48 small GUI rectangles; no persistent particle objects.",18,0,48));
+    public final DoubleSetting pixelSize=add(new DoubleSetting("pixel_size","Pixel size","Multiplier for the drifting blocks.",1,.5,3));
+    public final DoubleSetting pixelOpacity=add(new DoubleSetting("pixel_opacity","Pixel opacity","Multiplier for the original soft opacity.",1,0,2));
+    public final DoubleSetting pixelSpeed=add(new DoubleSetting("pixel_speed","Pixel drift speed","Independent decorative speed; reduced motion still freezes it.",1,0,3));
+    public final BooleanSetting pixelAccent=add(new BooleanSetting("pixel_accent","Use menu accent","Keep matching the accent, or choose an independent pixel color.",true));
+    public final ColorSetting pixelColor=add(new ColorSetting("pixel_color","Pixel color","ARGB color when accent matching is disabled.",0xFFCFE5FF));
     public final BooleanSetting loading = add(new BooleanSetting("loading", "World loading theme", "Theme ordinary world loading; keep real progress, narration and portal screens.", true));
     private final MenuClock clock = new MenuClock();
     private ConsoleTitleState titleState;
@@ -34,6 +40,11 @@ public final class ConsoleMenuModule extends VisualModule {
         preset("Sunset", "Warm amber panels with a slow sideways camera.", "accent", "#FFFFC477", "panel", "#DA352B22", "sky_tint", "#35CB722C", "motion", "SWAY", "speed", .55);
         preset("Moonlight", "Blue-gray stone and a quiet orbit.", "accent", "#FFA3CEFF", "panel", "#DF202B3C", "sky_tint", "#44274477", "motion", "ORBIT", "speed", .35);
         preset("Still", "Classic colors with all decorative motion disabled.", "reduce_motion", true);
+        pixelColor.visibleWhen(()->pixels.get()&&!pixelAccent.get());
+        for(var s:new Setting<?>[]{pixelAmount,pixelSize,pixelOpacity,pixelSpeed,pixelAccent}) s.visibleWhen(pixels::get);
+        group("Menu",alignment,motion,speed,amplitude,pitch,yaw,reverse,reduceMotion,entrance,accent,panel,text,skyTint,loading);
+        group("Drifting pixels",pixels,pixelAmount,pixelSize,pixelOpacity,pixelSpeed,pixelAccent,pixelColor);
+        preset("Starlit Stone","Sparse larger ice-blue pixels and slow drifting stone panels.","pixel_amount",12,"pixel_size",1.5,"pixel_opacity",1.5,"pixel_speed",.55,"pixel_accent",false,"accent","#FFA3CEFF");
     }
     public ConsoleTitleState titleState(Screen screen) { return titleState != null && titleState.screen()==screen ? titleState : null; }
     public void attach(ConsoleTitleState state) { titleState=state; }

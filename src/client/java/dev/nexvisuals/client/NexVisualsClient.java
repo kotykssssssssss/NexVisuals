@@ -43,6 +43,7 @@ public final class NexVisualsClient implements ClientModInitializer {
 
     // Narrow mixin adapters share the same module instances as GUI/config and Fabric hooks.
     public static NexVisualsClient instance() { return instance; }
+    public int accentColor() { return globals.accentColor.get(); }
     public ViewmodelModule viewmodel() { return catalog.viewmodel; }
     public CameraModule camera() { return catalog.camera; }
     public MenuBackdropModule backdrop() { return catalog.backdrop; }
@@ -67,12 +68,15 @@ public final class NexVisualsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         instance = this;
+        catalog.emitter.configure(globals);
         LocalAttackFeedback.register(catalog.hits::attacked, catalog.sounds::attacked);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.sounds::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.trails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.swing::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.weaponTrails::tick);
         catalog.trails.registerRendering();
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.trajectory::tick);
+        catalog.trajectory.registerRendering();
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents.ENTITY_LOAD.register(catalog.projectileTrails::loaded);
@@ -81,6 +85,8 @@ public final class NexVisualsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(catalog.jumpRings::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.footsteps::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.orbitals::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.consumption::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.rainRipples::tick);
         net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents.AFTER.register((level,player,pos,state) -> {
             if(catalog.blockEffects.enabled()) catalog.blockEffects.broken(Minecraft.getInstance(),pos);
         });

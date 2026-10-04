@@ -7,6 +7,9 @@
     {"type":"single","resource":"nexvisuals:particle/star","sprite":"nexvisuals:star"},
     {"type":"single","resource":"nexvisuals:particle/footprint","sprite":"nexvisuals:footprint"},
     {"type":"single","resource":"nexvisuals:particle/heart","sprite":"nexvisuals:heart"},
-    {"type":"single","resource":"nexvisuals:particle/pixel","sprite":"nexvisuals:pixel"}
+    {"type":"single","resource":"nexvisuals:particle/pixel","sprite":"nexvisuals:pixel"},
+    {"type":"single","resource":"nexvisuals:particle/dot","sprite":"nexvisuals:dot"},
+    {"type":"single","resource":"nexvisuals:particle/diamond","sprite":"nexvisuals:diamond"},
+    {"type":"single","resource":"nexvisuals:particle/streak","sprite":"nexvisuals:streak"}
   ]
 }

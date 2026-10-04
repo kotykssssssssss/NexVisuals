@@ -96,6 +96,24 @@ public abstract class VisualModule {
     protected final void action(String name, String description, Runnable operation) {
         actions.add(new ModuleAction(name, description, operation));
     }
+    /** Freeze omitted fields before extending a module, keeping old recipes independent of new defaults. */
+    protected final void preservePresetDefaults(Object... previousDefaults) {
+        if (previousDefaults.length % 2 != 0) throw new IllegalArgumentException("Expected setting/value pairs");
+        Map<String, JsonElement> defaults = new LinkedHashMap<>();
+        settings.forEach(s -> defaults.put(s.id(), s.toJson()));
+        Gson gson = new Gson();
+        for (int i = 0; i < previousDefaults.length; i += 2) {
+            String id = (String) previousDefaults[i];
+            if (!defaults.containsKey(id)) throw new IllegalArgumentException("Unknown legacy default " + id);
+            defaults.put(id, gson.toJsonTree(previousDefaults[i + 1]));
+        }
+        for (int i = 0; i < presets.size(); i++) {
+            ModulePreset old = presets.get(i);
+            Map<String, JsonElement> values = new LinkedHashMap<>(defaults);
+            values.putAll(old.values());
+            presets.set(i, new ModulePreset(old.name(), old.description(), values));
+        }
+    }
     public final void applyPreset(ModulePreset preset) {
         if (!presets.contains(preset)) throw new IllegalArgumentException("Preset belongs to another module");
         Map<Setting<?>, JsonElement> previous = new LinkedHashMap<>();

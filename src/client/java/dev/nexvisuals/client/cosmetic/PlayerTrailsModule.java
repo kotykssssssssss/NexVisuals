@@ -27,7 +27,7 @@ public final class PlayerTrailsModule extends VisualModule {
     private final ColorSetting secondary = add(new ColorSetting("secondary", "Secondary", "Color at the end of particle life.", 0x77CB8AFF));
     private final IntSetting density = add(new IntSetting("density", "Density / quality", "Samples per block travelled; maximum 12 emitted per tick.", 8, 1, 16));
     private final IntSetting lifetime = add(new IntSetting("lifetime", "Lifetime", "Life in ticks. Geometry history is also limited to 64 samples.", 18, 3, 60));
-    private final DoubleSetting size = add(new DoubleSetting("size", "Width / size", "Particle radius or full ribbon width in world units.", .13, .03, .4));
+    private final DoubleSetting size = add(new DoubleSetting("size", "Width / size", "Particle radius or full ribbon width in world units.", 0.16, .03, .4));
     private final DoubleSetting distance = add(new DoubleSetting("distance", "Minimum movement", "Emission begins after moving this distance in one tick.", .035, .01, .5));
     private final DoubleSetting height = add(new DoubleSetting("height", "Height above feet", "Local-player trail emitter height.", .15, .05, 1.7));
     private final BooleanSetting fade = add(new BooleanSetting("fade", "Fade", "Fade each trail sample.", true));
@@ -42,6 +42,7 @@ public final class PlayerTrailsModule extends VisualModule {
     private final EffectEmitter emitter;
     private Object lastLevel;
     private Vec3 previous;
+    public final ParticleAppearance appearance;
     public PlayerTrailsModule(EffectEmitter emitter) {
         super("player_trails", "Player Trails", "Bounded local-player particles, respecting ordinary world depth and particle settings.", Category.PARTICLES);
         this.emitter = emitter;
@@ -55,6 +56,17 @@ public final class PlayerTrailsModule extends VisualModule {
         group("Style & colors", style, primary, secondary, thirdPerson);
         group("Motion & particles", density, lifetime, size, distance, height, fade);
         group("Ribbon geometry", length, taper, quality);
+        preservePresetDefaults("size", 0.13);
+        if(groups().isEmpty()) group("General",settings().toArray(Setting<?>[]::new));
+        appearance=new ParticleAppearance(this::add,ParticleAppearance.Kind.FREE);
+        appearance.spritesWhen(()->!ribbonStyle());
+        group("Particle colors",appearance.colors());
+        group("Particle motion",appearance.motion());
+        group("Particle advanced",appearance.advanced());
+        preset("Smooth Plus", "Refined size, motion and palette; fully editable.", "style", "SILK", "size", 0.16, "particle_envelope", true, "particle_fade_in", 0.1, "particle_fade_out", 0.55);
+        preset("Neon Comet", "Refined size, motion and palette; fully editable.", "style", "SPARKS", "size", 0.17, "density", 6, "particle_color_mode", "GRADIENT", "particle_drag", 0.97, "particle_shape", "STREAK");
+        preset("Minimal Dots", "Small clean circular motes with a short tail.", "style", "MOTES", "size", 0.1, "density", 3, "lifetime", 12, "particle_opacity", 0.8, "particle_shape", "DOT");
+
     }
     private boolean ribbonStyle() { return style.get()==Style.RIBBON || style.get()==Style.DUAL || style.get()==Style.LINE; }
     private boolean visible(Minecraft client) {
@@ -82,12 +94,13 @@ public final class PlayerTrailsModule extends VisualModule {
                 boolean spark = style.get() == Style.SPARKS, ring = style.get() == Style.RINGS;
                 int color = style.get() == Style.RAINBOW ? (primary.get() & 0xFF000000) |
                         (Color.HSBtoRGB((client.level.getGameTime() % 160) / 160f, .65f, 1) & 0xFFFFFF) : primary.get();
-                double jitter = style.get() == Style.MOTES || spark ? .02 : 0;
+                color=appearance.componentColor(primary.get(),color);
+                double jitter = style.get() == Style.MOTES || spark ? .02*appearance.randomness.get() : 0;
                 emitter.emit(client, p, (client.level.random.nextDouble() - .5) * jitter, spark ? .035 : .002, 0,
                         spark ? EffectParticle.Shape.SPARK : ring ? EffectParticle.Shape.RING : EffectParticle.Shape.ORB,
                         size.get().floatValue(), color, secondary.get(), lifetime.get(), spark ? .25f : 0,
                         fade.get(), true, ring ? EffectParticle.Scaling.EXPAND : EffectParticle.Scaling.SHRINK,
-                        Easing.LINEAR, spark ? client.level.random.nextFloat() * 6.283f : 0, 0, this::enabled);
+                        Easing.LINEAR, spark ? client.level.random.nextFloat() * (float)(6.283*appearance.randomness.get()) : 0, 0, this::enabled, appearance);
             }
         }
         previous = current;
@@ -127,8 +140,17 @@ public final class PlayerTrailsModule extends VisualModule {
         long now=state.gameTime*50+(long)(partial*50);
         history.trim(now,lifetime.get()*50L,length.get());
         int detail=client.options.particles().get()==ParticleStatus.DECREASED?1:quality.get();
+        var tuning=appearance.snapshot();
+        double visibility=dev.nexvisuals.core.visual.ParticleMath.distanceFade(head.distanceToSqr(camera),
+                Math.min(tuning.maxDistance(),emitter.quality().distance),tuning.distanceFade());
+        if(visibility<=0) return RibbonMesh.EMPTY;
+        int accent=dev.nexvisuals.client.NexVisualsClient.instance()==null?0xFF8B9DFF:dev.nexvisuals.client.NexVisualsClient.instance().accentColor();
+        int start=dev.nexvisuals.core.visual.ParticleMath.color(tuning,primary.get(),secondary.get(),0,0,state.gameTime/20.0,accent);
+        int end=dev.nexvisuals.core.visual.ParticleMath.color(tuning,primary.get(),secondary.get(),1,1,state.gameTime/20.0,accent);
+        start=dev.nexvisuals.client.render.Draw.withAlpha(start,(float)visibility);
+        end=dev.nexvisuals.client.render.Draw.withAlpha(end,(float)visibility);
         return RibbonMesh.player(history,now,lifetime.get()*50L,size.get()*(style.get()==Style.LINE?.35:1),taper.get(),
-                primary.get(),secondary.get(),detail,style.get()==Style.DUAL,fade.get(),camera.x,camera.y,camera.z,head.x,head.y+height.get(),head.z);
+                start,end,detail,style.get()==Style.DUAL,fade.get(),camera.x,camera.y,camera.z,head.x,head.y+height.get(),head.z);
     }
     @Override public String runtimeStatus() { return ribbonStyle()?renderStatus:""; }
     private void clear() { previous=null;lastLevel=null;sampledStyle=null;history.clear();renderStatus=""; }

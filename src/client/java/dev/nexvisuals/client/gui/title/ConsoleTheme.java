@@ -16,12 +16,12 @@ public final class ConsoleTheme {
         Draw.rect(g,0,0,width,height,theme.skyTint.get());
         g.fillGradient(0,0,width,height,0x10000000,loading?0xD0101418:0x850C1014);
         double phase=theme.phase();
-        if (theme.pixels.get()) for (int i=0;i<18;i++) {
-            double travel=phase*(theme.reverse.get()?-1:1);
+        if (theme.pixels.get()) for (int i=0;i<theme.pixelAmount.get();i++) {
+            double travel=phase*(theme.reverse.get()?-1:1)*theme.pixelSpeed.get();
             int x=(int)wrap(i*73.31+travel*(2+i%3),width+16)-8;
             int y=(int)wrap(i*41.73-travel*(1+i%2),height+16)-8;
-            int size=1+i%3;
-            Draw.rect(g,x,y,size,size,Draw.withAlpha(theme.accent.get(),.07f+(i%4)*.025f));
+            int size=Math.max(1,(int)Math.round((1+i%3)*theme.pixelSize.get()));
+            Draw.rect(g,x,y,size,size,Draw.withAlpha(theme.pixelAccent.get()?theme.accent.get():theme.pixelColor.get(),(float)((.07+(i%4)*.025)*theme.pixelOpacity.get())));
         }
     }
     private static double wrap(double value, double bound) { return (value%bound+bound)%bound; }

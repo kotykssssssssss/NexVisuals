@@ -72,7 +72,7 @@ public final class ContainerVisualState {
         return counts;
     }
     private void add(Ghost ghost) { while (ghosts.size() >= 32) ghosts.removeFirst(); ghosts.addLast(ghost); }
-    private double progress(long start, int duration) { return EffectMath.unit((System.nanoTime() - start) / (duration * 1_000_000.0)); }
+    private double progress(long start, double duration) { return EffectMath.unit((System.nanoTime() - start) / (duration * 1_000_000.0)); }
 
     public void render(GuiGraphics g, int left, int top, Slot hovered, ContainerVisualsModule module) {
         if (!module.enabled()) { ghosts.clear(); hovers.clear(); return; }
@@ -87,13 +87,19 @@ public final class ContainerVisualState {
             for (Hover h : hovers) Draw.border(g, h.x - 1, h.y - 1, 18, 18, 1,
                     Draw.withAlpha(module.accent.get(), (float) (1 - module.easing.get().apply(progress(h.start, module.duration.get())))));
         }
-        ghosts.removeIf(ghost -> progress(ghost.start, module.duration.get()) >= 1);
+        ghosts.removeIf(ghost -> progress(ghost.start, module.duration.get()*(ghost.transfer?1:module.clickDuration.get())) >= 1);
         for (Ghost ghost : ghosts) {
-            double p = progress(ghost.start, module.duration.get()), t = module.easing.get().apply(p);
+            double p = progress(ghost.start, module.duration.get()*(ghost.transfer?1:module.clickDuration.get())), t = module.easing.get().apply(p);
             float alpha = (float) (1 - p);
             if (!ghost.transfer) {
-                int grow = (int) (p * 6 * module.intensity.get());
-                Draw.border(g, ghost.x - grow, ghost.y - grow, 16 + grow*2, 16 + grow*2, 1, Draw.withAlpha(module.accent.get(), alpha));
+                if(!module.clicks.get()) continue;
+                int grow = (int) (p * module.clickSpread.get() * module.intensity.get());
+                int color=Draw.withAlpha(module.clickGradient.get()?EffectMath.color(module.accent.get(),module.clickEnd.get(),p):module.accent.get(),alpha*module.clickOpacity.get().floatValue());
+                if(module.clickStyle.get()==ContainerVisualsModule.ClickStyle.DIAMOND) Draw.diamondOutline(g,ghost.x+8,ghost.y+8,8+grow,module.clickThickness.get(),color);
+                else {
+                    Draw.border(g, ghost.x - grow, ghost.y - grow, 16 + grow*2, 16 + grow*2, module.clickThickness.get(),color);
+                    if(module.clickStyle.get()==ContainerVisualsModule.ClickStyle.DOUBLE_FRAME) Draw.border(g,ghost.x-grow/2,ghost.y-grow/2,16+grow,16+grow,module.clickThickness.get(),Draw.withAlpha(color,.4f));
+                }
                 continue;
             }
             var style = module.motion.get();

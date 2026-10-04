@@ -70,6 +70,11 @@ public final class SkyboxModule extends VisualModule {
     public final DoubleSetting atmosphereSpeed=number("atmosphere_speed","Atmosphere motion",.7,0,2);
     public final BooleanSetting shootingStars=bool("shooting_stars","Shooting stars",false);
     public final DoubleSetting meteorInterval=number("meteor_interval","Shooting star interval",18,6,40);
+    public final DoubleSetting meteorWidth=number("meteor_width","Meteor width",1,.5,3);
+    public final DoubleSetting meteorOpacity=number("meteor_opacity","Meteor opacity",1,0,2);
+    public final DoubleSetting meteorLifetime=number("meteor_lifetime","Meteor lifetime",1.3,.4,3);
+    public final DoubleSetting meteorSpeed=number("meteor_speed","Meteor speed",1,.25,2);
+    public final ColorSetting meteorTint=color("meteor_tint","Meteor tint",0xFFFFFFFF);
     public final BooleanSetting glow=bool("horizon_glow","Soft horizon glow",true);
     public final DoubleSetting glowIntensity=number("glow_intensity","Horizon glow intensity",.15,0,.8);
     public final ColorSetting glowColor=color("glow_color","Horizon glow color",0xFFFFB475);
@@ -94,6 +99,10 @@ public final class SkyboxModule extends VisualModule {
         group("Sun & Moon",sunSize,sunOpacity,sunTint,moonSize,moonOpacity,moonTint);
         group("Atmosphere",aurora,auroraIntensity,auroraColor,nebula,nebulaIntensity,nebulaColor,atmosphereSpeed,shootingStars,meteorInterval,glow,glowIntensity,glowColor);
         group("Fog",fog,fogColor,fogBlend,fogDensity);
+        group("Meteors",meteorWidth,meteorOpacity,meteorLifetime,meteorSpeed,meteorTint);
+        for(var s:new Setting<?>[]{meteorInterval,meteorWidth,meteorOpacity,meteorLifetime,meteorSpeed,meteorTint}) s.visibleWhen(shootingStars::get);
+        for(var s:new Setting<?>[]{starShape,starAmount,starSize}) s.visibleWhen(()->stars.get()==Stars.CUSTOM);
+        twinkleSpeed.visibleWhen(twinkle::get);twinkleIntensity.visibleWhen(twinkle::get);
         preset("Vanilla+","A deeper gradient with familiar vanilla celestial bodies.");
         preset("Deep Night","Dense twinkling stars, dark blue zenith and a restrained green aurora.","stars","CUSTOM","star_amount",2600,"night_sky","#FF071426","night_zenith","#FF010510","aurora",true,"aurora_intensity",.3);
         preset("Purple Nebula","Cloud-like violet nebula, soft stars and a blue-purple night.","stars","CUSTOM","nebula",true,"nebula_intensity",.65,"night_sky","#FF241344","night_zenith","#FF0D092B","night_horizon","#FF453566","star_color","#FFF3CFFF","star_size",1.35);
@@ -117,6 +126,7 @@ public final class SkyboxModule extends VisualModule {
                 "stars","CUSTOM","star_amount",2200,"star_size",1.1,"nebula",true,"nebula_intensity",.25,
                 "aurora",true,"aurora_intensity",.1,"aurora_color","#FF76BABD","shooting_stars",true,
                 "fog",true,"cycle_fog",true,"fog_color","#FFFFFFFF","fog_blend",.13,"fog_density",1.06);
+        preset("Meteor Garden","A calm deep night with soft stars and wider, slower shooting stars.","stars","CUSTOM","star_amount",1700,"night_sky","#FF111A32","nebula",true,"nebula_intensity",.2,"shooting_stars",true,"meteor_interval",14,"meteor_width",1.4,"meteor_lifetime",1.8,"meteor_speed",.7,"meteor_tint","#FFE5DAFF");
     }
     private BooleanSetting bool(String id,String name,boolean value) { return add(new BooleanSetting(id,name,"Cosmetic sky layer; toggles independently.",value)); }
     private DoubleSetting number(String id,String name,double value,double min,double max) { return add(new DoubleSetting(id,name,"Changes only sky appearance.",value,min,max)); }

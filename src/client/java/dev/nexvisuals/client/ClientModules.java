@@ -21,6 +21,7 @@ public final class ClientModules {
     public final WeaponTrailsModule weaponTrails = registry.register(new WeaponTrailsModule());
     public final TotemAnimationModule totemAnimation = registry.register(new TotemAnimationModule());
     public final ShieldModule shield = registry.register(new ShieldModule());
+    public final TrajectoryModule trajectory = registry.register(new TrajectoryModule());
     public final CameraModule camera = registry.register(new CameraModule());
     public final MenuBackdropModule backdrop = registry.register(new MenuBackdropModule());
     public final ConsoleMenuModule consoleMenu = registry.register(new ConsoleMenuModule());
@@ -30,13 +31,15 @@ public final class ClientModules {
     public final SkyboxModule skybox = registry.register(new SkyboxModule());
     public final dev.nexvisuals.client.post.PostProcessingModule post = registry.register(new dev.nexvisuals.client.post.PostProcessingModule());
     public final ContainerVisualsModule containers = registry.register(new ContainerVisualsModule());
-    public final CosmeticParticlesModule classicParticles = registry.register(new CosmeticParticlesModule());
     public final EffectEmitter emitter = new EffectEmitter();
+    public final CosmeticParticlesModule classicParticles = registry.register(new CosmeticParticlesModule(emitter));
     public final JumpRingsModule jumpRings = registry.register(new JumpRingsModule(emitter));
     public final FootstepEffectsModule footsteps = registry.register(new FootstepEffectsModule(emitter));
     public final TotemEchoModule totemEcho = registry.register(new TotemEchoModule(emitter));
     public final BlockEffectsModule blockEffects = registry.register(new BlockEffectsModule(emitter));
     public final OrbitalsModule orbitals = registry.register(new OrbitalsModule(emitter));
+    public final ConsumptionEffectsModule consumption = registry.register(new ConsumptionEffectsModule(emitter));
+    public final RainRipplesModule rainRipples = registry.register(new RainRipplesModule(emitter));
     public final dev.nexvisuals.client.post.WeatherLensModule weatherLens = registry.register(new dev.nexvisuals.client.post.WeatherLensModule());
     public final dev.nexvisuals.client.post.UnderwaterEffectsModule underwater = registry.register(new dev.nexvisuals.client.post.UnderwaterEffectsModule());
     public final dev.nexvisuals.client.post.RetroDisplayModule retroDisplay = registry.register(new dev.nexvisuals.client.post.RetroDisplayModule());

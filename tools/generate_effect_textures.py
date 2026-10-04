@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1] / 'src/main/resources'
 OUT = ROOT / 'assets/nexvisuals/textures/particle'
 OUT.mkdir(parents=True, exist_ok=True)
 N = 128
-SHAPES = ('orb', 'spark', 'ring', 'slash', 'star', 'footprint', 'heart', 'pixel')
+SHAPES = ('orb', 'spark', 'ring', 'slash', 'star', 'footprint', 'heart', 'pixel', 'dot', 'diamond', 'streak')
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--shapes', nargs='+', choices=SHAPES, default=SHAPES)
 for shape in parser.parse_args().shapes:
@@ -36,6 +36,9 @@ for shape in parser.parse_args().shapes:
                 a = max(0, min(1, .5 - field * 35))
             elif shape == 'pixel':
                 a = max(0, min(1, (.65 - max(abs(x), abs(y))) * 70))
+            elif shape == 'dot': a = max(0, min(1, (.55-r)*45))
+            elif shape == 'diamond': a = max(0, min(1, (.82-abs(x)-abs(y))*45))
+            elif shape == 'streak': a = math.exp(-x*x*400) * max(0, 1-abs(y))**.5
             else: a = math.exp(-x*x*170-y*y*5) + math.exp(-y*y*170-x*x*5) + .2*math.exp(-r*r*10)
             image.putpixel((px, py), (255, 255, 255, round(255 * min(1, a) * min(1, max(0, (1-r)*12)))))
     image.save(OUT / (shape + '.png'))
