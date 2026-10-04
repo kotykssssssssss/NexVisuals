@@ -4,6 +4,7 @@
   "version": "${version}",
   "name": "NexVisuals",
   "description": "Modular client-side visual customization for Minecraft.",
+  "license": "MIT",
   "environment": "client",
   "mixins": ["nexvisuals.client.mixins.json"],
   "entrypoints": {

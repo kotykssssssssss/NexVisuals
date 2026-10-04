@@ -62,6 +62,7 @@ public final class NexVisualsClient implements ClientModInitializer {
     public TotemSoundsModule totemSounds() { return catalog.totemSounds; }
     public dev.nexvisuals.client.hud.TotemTrackerModule totemTracker() { return catalog.totemTracker; }
     public dev.nexvisuals.client.cosmetic.BlockEffectsModule blockEffects() { return catalog.blockEffects; }
+    public dev.nexvisuals.client.hud.PickupHudModule pickups() { return catalog.pickups; }
 
     @Override
     public void onInitializeClient() {
@@ -74,6 +75,9 @@ public final class NexVisualsClient implements ClientModInitializer {
         catalog.trails.registerRendering();
         ClientTickEvents.END_CLIENT_TICK.register(catalog.fireflies::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.elytraTrails::tick);
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents.ENTITY_LOAD.register(catalog.projectileTrails::loaded);
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents.ENTITY_UNLOAD.register(catalog.projectileTrails::unloaded);
+        ClientTickEvents.END_CLIENT_TICK.register(catalog.projectileTrails::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.jumpRings::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.footsteps::tick);
         ClientTickEvents.END_CLIENT_TICK.register(catalog.orbitals::tick);

@@ -67,6 +67,10 @@ tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
+tasks.named('jar') {
+    from('LICENSE') { into 'META-INF'; rename { 'LICENSE_nexvisuals' } }
+    from('ASSETS.md') { into 'META-INF/nexvisuals' }
+}
 test { useJUnitPlatform() }
 
 // Headless integration tests for actual module definitions and pinned mixin targets, without launching Minecraft.
@@ -98,6 +102,9 @@ tasks.register('verifyModJar') {
         new java.util.zip.ZipFile(file).withCloseable { zip ->
             def json = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
             assert json.id == 'nexvisuals' && json.environment == 'client'
+            assert json.license == 'MIT'
+            assert zip.getEntry('META-INF/LICENSE_nexvisuals') != null
+            assert zip.getEntry('META-INF/nexvisuals/ASSETS.md') != null
             assert json.depends.minecraft == '=1.21.11' : 'Target must remain exactly Minecraft 1.21.11'
             assert !json.entrypoints.containsKey('main') && !json.entrypoints.containsKey('server')
             def mixins = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('nexvisuals.client.mixins.json')))

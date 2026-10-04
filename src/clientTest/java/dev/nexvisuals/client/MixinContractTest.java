@@ -95,6 +95,30 @@ class MixinContractTest {
             assertTrue(injectionCount >= 12, "Expected all declared adapters to be inspected");
         }
     }
+    @Test void pickupObserverRunsAfterClientThreadHandoffAndBeforeNativeStackRemoval() throws Exception {
+        var nativeClass = read("net/minecraft/client/multiplayer/ClientPacketListener");
+        var method = nativeClass.methods.stream().filter(m -> m.name.equals("handleTakeItemEntity")).findFirst().orElseThrow();
+        var calls = Arrays.stream(method.instructions.toArray()).filter(n -> n instanceof MethodInsnNode).map(n -> (MethodInsnNode) n).toList();
+        int handoff = -1, removal = -1;
+        for (int i = 0; i < calls.size(); i++) {
+            if (calls.get(i).name.equals("ensureRunningOnSameThread")) handoff = i;
+            if (calls.get(i).name.equals("shrink")) removal = i;
+        }
+        assertTrue(handoff >= 0 && removal > handoff);
+        var mixin = read("dev/nexvisuals/client/mixin/ClientPacketListenerMixin");
+        var observer = mixin.methods.stream().filter(m -> m.name.equals("nexvisuals$localPickup")).findFirst().orElseThrow();
+        var inject = annotations(observer.visibleAnnotations, observer.invisibleAnnotations).stream()
+                .filter(a -> a.desc.endsWith("/Inject;")).findFirst().orElseThrow();
+        assertNotEquals(Boolean.TRUE, value(inject, "cancellable"));
+        var at = (AnnotationNode) ((List<?>) value(inject, "at")).getFirst();
+        assertEquals("INVOKE", value(at, "value"));
+        assertTrue(value(at, "target").toString().contains("ensureRunningOnSameThread"));
+        assertEquals("AFTER", ((String[]) value(at, "shift"))[1]);
+        for (var instruction : observer.instructions) if (instruction instanceof MethodInsnNode call) {
+            assertFalse(java.util.Set.of("shrink", "setCount", "removeEntity", "send", "cancel").contains(call.name), "Observer must not alter inventory, packets or vanilla processing");
+        }
+    }
+
     @Test void localSwingObservationRunsAfterNativeAcceptanceAndDoesNotCancelIt() throws Exception {
         var nativeClass=read("net/minecraft/client/player/LocalPlayer");
         var swing=nativeClass.methods.stream().filter(m->m.name.equals("swing")).findFirst().orElseThrow();

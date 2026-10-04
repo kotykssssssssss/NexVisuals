@@ -36,11 +36,13 @@ sh gradlew runClient
 .\gradlew.bat genSources
 ```
 
-Основной артефакт: `build/libs/nexvisuals-0.9.1-dev.jar` — production/remapped мод. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
+Основной артефакт текущей локальной сборки: `build/libs/nexvisuals-1.0.0.jar` — production/remapped мод с предоставленными звуками. Для публикации подготовлен отдельный `build/release/nexvisuals-1.0.0.jar` с vanilla sound event fallbacks. Устанавливать ровно один вариант. Файл `-sources.jar` предназначен для изучения исходников, а не для установки. Нужны **Minecraft 1.21.11**, **Java 21+**, **Fabric Loader 0.19.5+** и **Fabric API 0.141.6+1.21.11** либо совместимый более новый API именно для 1.21.11. Дополнительных обязательных библиотек нет. Уберите старый NexVisuals JAR перед установкой нового.
 
 Шесть предоставленных пользователем MP3 подготовлены в локальной ignored-папке `.tools/user-sounds`. Для сборки с этими клипами используйте `clean build -PuserSoundResources=.tools/user-sounds`; обычный `clean build` использует vanilla event fallbacks и не включает чужие аудиофайлы. Готовый JAR текущего этапа собран **с клипами**, отдельный resource pack не нужен. Происхождение файлов и подготовка описаны в [Sound Feedback](docs/sound-feedback.md) и [ASSETS](ASSETS.md).
 
 ## Что доступно
+
+- **1.0.0:** Projectile Trails — Comet / Embers / Pearl Halos для видимых снарядов; Pickup HUD — анимированные карточки собственных подборов с объединением counts, icons и общим drag/scale редактором. В GUI указано, включены ли локальные аудиоклипы. [Описание релиза](RELEASE_NOTES.md), [changelog](CHANGELOG.md), [настройки новых модулей](docs/release-features.md).
 
 - Предрелиз **0.9.1**: исправлены мерцающие описания и сброс прокрутки при активном поиске. Перемещение/восстановление курсора больше не пересоздаёт список; ввод и очистка запроса по-прежнему обновляют фильтр. Конфиг и существующие визуальные функции сохранены.
 
@@ -64,7 +66,7 @@ sh gradlew runClient
 - Viewmodel: position/rotation, общий и per-axis scale, две руки, Copy/Mirror и шесть presets. Item Swing: семь стилей, duration/easing/amplitude и Custom transforms.
 - Fire Overlay, отдельные resting/blocking Shield transforms, ограниченные по lifetime Player Trails и локальный Cosmetic Hat.
 - Fireflies: дрейфующие мерцающие огоньки с цветами, плотностью, радиусом и режимом dusk/night. Elytra Trails: парные потоки только при локальном полёте, стили Aurora/Comet/Halo.
-- Custom Crosshair со статичными и анимированными presets, одиннадцать собственных HUD элементов и общий framework для восьми vanilla HUD layers с HUD Editor, позициями, scale, backgrounds и outlines.
+- Custom Crosshair со статичными и анимированными presets, двенадцать собственных HUD элементов и общий framework для восьми vanilla HUD layers с HUD Editor, позициями, scale, backgrounds и outlines.
 - Hotbar / Mini HUD: единый масштаб нижних индикаторов вокруг центра экрана, включая воздух, mount health и item name. Keystrokes показывает плитки с подсветкой фактически нажатых клавиш.
 - Container Visuals: общие panel/slot/hover/click эффекты и quick-move ghosts по однозначным локальным slot changes.
 - Sky Palette для vanilla Overworld sky; безопасная кнопка открытия публичного Iris settings screen при его наличии. Управление shader-pack presets не реализовано.
@@ -107,6 +109,6 @@ Hit Effects и Hit Sounds показывают **локальную попытк
 
 GLSL проверяется отдельно командой `tools/validate_shaders.ps1 -Validator /path/to/glslang.exe -MinecraftJar /path/to/1.21.11/minecraft-client.jar`: compile/link пяти программ с настоящими vanilla imports и размеры uniform blocks. Скрипт ничего не скачивает и не открывает игру. Процедура и ограничения проверки описаны в [validation](docs/validation.md).
 
-Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Wrapper JAR — официальный проверенный служебный бинарник; PNG masks — исходные ресурсы мода. Их происхождение описано в [ASSETS.md](ASSETS.md). Решение о лицензии основного кода и публикации остаётся владельцу проекта. Codex не выполняет commit/push/tag/release.
+Gradle cache, development runtime, логи, crash reports, IDE-файлы и сборочные артефакты исключены из Git. Wrapper JAR — официальный проверенный служебный бинарник; PNG masks — исходные ресурсы мода. Их происхождение описано в [ASSETS.md](ASSETS.md). Код лицензирован под MIT согласно существующему [LICENSE](LICENSE); лицензия включена в metadata/JAR. GitHub-публикацию выполняет владелец проекта: автоматических commit/push/tag/release нет.
 
 Это не официальный продукт Minecraft; он не связан с Mojang или Microsoft.

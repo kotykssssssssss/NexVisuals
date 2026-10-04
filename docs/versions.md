@@ -13,7 +13,7 @@
 | Gradle Wrapper | `9.2.1` | Зафиксированный Gradle для Loom 1.14, SHA-256 дистрибутива в wrapper properties |
 | JUnit Jupiter | `5.11.4` | Тесты независимого Java-ядра |
 
-Текущая версия NexVisuals — `0.9.1-dev` (предрелиз v0.9): исправлены мерцание описаний и сброс прокрутки при активном поиске. Сохранены исправленные Viewmodel PvP/Cinematic и общий Cinematic profile, opt-in зеркалирование для Left main arm, Item Swing/Weapon Trails, hotfix Player Trails и все прежние звуковые/визуальные функции. Стек Minecraft/Fabric не менялся; adapters проверяются по bytecode строго **1.21.11**. Rendering основан на штатных Fabric extraction/drawing hooks и Minecraft buffers, без новых обязательных зависимостей. Описание — в [trails-and-totem](trails-and-totem.md) и [swing-and-weapon-trails](swing-and-weapon-trails.md). Runtime/visual-проверки оставлены пользователю.
+Текущая версия NexVisuals — `1.0.0`. Добавлены Projectile Trails / Pickup HUD; сохранены предрелизные исправления поиска, Viewmodel PvP/Cinematic, Item Swing/Weapon Trails и Player Trails. Стек Minecraft/Fabric не менялся; adapters проверяются по bytecode строго **1.21.11**. Rendering использует штатные Fabric lifecycle hooks, Minecraft particles/buffers и существующий HUD framework. Новых обязательных зависимостей нет. Подготовлены два локальных артефакта: личный с предоставленными звуками и публичный с vanilla event fallbacks. Публикацию выполняет пользователь. [Описание](../RELEASE_NOTES.md), [новые модули](release-features.md); visual/runtime-проверки оставлены пользователю.
 
 Проверено 28 сентября 2026 года. Источники:
 

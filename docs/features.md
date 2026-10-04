@@ -1,4 +1,12 @@
-# Возможности 0.9.1-dev
+# Возможности 1.0.0
+
+## Дополнения 1.0
+
+**Projectile Trails**: Comet / Embers / Pearl Halos в категории Particles. Цвета/alpha, размер, lifetime, density, типы снарядов, distance и Own only. Эффекты следуют прошлым наблюдаемым позициям; невидимые, неподвижные и находящиеся за стенами снаряды не создают новых частиц. Используется прежний depth-tested particle pipeline и общий лимит. Будущая траектория не предсказывается.
+
+**Pickup HUD**: карточки собственных подтверждённых подборов, item icons / names / counts, объединение одинаковых item+components. Presets Stacked / Compact / Minimal и Slide / Pop / Fade; общий HUD Editor, anchors, scale, colors, config/profiles. История ограничена шестью строками и очищается при выключении/смене мира. Новых Mixin classes нет: добавлен небольшой observer в существующий ClientPacketListenerMixin.
+
+В Hit Sounds / Totem Pop Sounds редактор показывает, содержит ли текущая сборка шесть пользовательских клипов или использует vanilla fallbacks. Все прежние функции и bugfixes сохранены. [Настройки, лимиты и ручная проверка](release-features.md), [готовое описание релиза](../RELEASE_NOTES.md).
 
 ## Предрелиз 0.9.1
 

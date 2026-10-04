@@ -9,6 +9,8 @@ import net.minecraft.sounds.SoundEvent;
 
 /** Plays only after the real local totem status event. No inference about other players. */
 public final class TotemSoundsModule extends VisualModule {
+    @Override public String runtimeStatus() { return HitSoundsModule.audioStatus(); }
+
     public enum Voice {
         VANILLA("minecraft:item.totem.use"), CHIME("minecraft:block.amethyst_block.chime"),
         BELL("minecraft:block.note_block.bell"), ARCADE("minecraft:block.note_block.bit"), SOFT("minecraft:block.note_block.harp"),

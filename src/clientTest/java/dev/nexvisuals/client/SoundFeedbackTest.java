@@ -18,6 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class SoundFeedbackTest {
     @TempDir Path directory;
     private Setting<?> setting(VisualModule module,String id) {return module.settings().stream().filter(s->s.id().equals(id)).findFirst().orElseThrow();}
+    @Test void guiAudioStatusMatchesTheActualBundledResourceMode() {
+        var catalog = new ClientModules();
+        boolean clips = getClass().getResource("/nexvisuals/user-audio.json") != null;
+        assertTrue(catalog.sounds.runtimeStatus().contains(clips ? "Local audio build" : "vanilla fallback"));
+        assertEquals(catalog.sounds.runtimeStatus(), catalog.totemSounds.runtimeStatus());
+    }
     @Test void suppliedVoicesHaveResolvablePackagedDefinitionsWithFilesOrSafeVanillaFallbacks() throws Exception {
         JsonObject sounds;
         try(var input=getClass().getResourceAsStream("/assets/nexvisuals/sounds.json")) {

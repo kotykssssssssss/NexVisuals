@@ -47,6 +47,8 @@ public final class ClientModules {
     public final PlayerTrailsModule trails = registry.register(new PlayerTrailsModule(emitter));
     public final FirefliesModule fireflies = registry.register(new FirefliesModule(emitter));
     public final ElytraTrailsModule elytraTrails = registry.register(new ElytraTrailsModule(emitter));
+    public final ProjectileTrailsModule projectileTrails = registry.register(new ProjectileTrailsModule(emitter));
+    public final dev.nexvisuals.client.hud.PickupHudModule pickups = registry.register(new dev.nexvisuals.client.hud.PickupHudModule());
     public final CosmeticHatModule hat = registry.register(new CosmeticHatModule());
     public final VanillaHudModule hotbar = registry.register(new VanillaHudModule(VanillaHudModule.Element.HOTBAR, null));
     public ClientModules() {

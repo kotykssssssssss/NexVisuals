@@ -14,6 +14,12 @@ import net.minecraft.world.phys.Vec3;
 
 /** Local attack feedback, including optional user-supplied clips converted at build time. */
 public final class HitSoundsModule extends VisualModule {
+    private static final String AUDIO_STATUS = HitSoundsModule.class.getResource("/nexvisuals/user-audio.json") != null
+            ? "Local audio build: six supplied clips are bundled."
+            : "Public audio build: supplied-clip slots use vanilla fallback sounds.";
+    public static String audioStatus() { return AUDIO_STATUS; }
+    @Override public String runtimeStatus() { return AUDIO_STATUS; }
+
     public enum Voice {
         SOFT("block.note_block.harp"), CLICK("ui.button.click"), POP("entity.chicken.egg"),
         BELL("block.note_block.bell"), METALLIC("block.chain.hit"), ARCADE("block.note_block.bit"),

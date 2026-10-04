@@ -1,3 +1,53 @@
+# NexVisuals 1.0.0 — 4 октября 2026
+
+Продолжение существующего проекта: Projectile Trails / Pickup HUD, индикация audio build mode, MIT metadata/notice и описание для публикации пользователем. Прежние исправления search/scroll, Viewmodel PvP/Cinematic, Swing/Weapon Trails и Player Trails сохранены. `gradle.properties`: **minecraft_version=1.21.11**, `mod_version=1.0.0`; production metadata требуют `minecraft: =1.21.11`.
+
+## Выполненные проверки
+
+Из `E:\Projects\nexvisuals`, JDK 21.0.9 / Gradle 9.2.1:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:GRADLE_USER_HOME=Join-Path (Get-Location) '.gradle-user-home'
+$env:TEMP=Join-Path (Get-Location) '.tools\tmp'
+$env:TMP=$env:TEMP
+$env:JAVA_TOOL_OPTIONS='-Djava.net.preferIPv4Stack=true'
+# Public variant; remapped JAR then staged outside build/ before the next clean:
+.\gradlew.bat clean build --no-daemon --offline --console=plain --warning-mode=all '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp -Djava.net.preferIPv4Stack=true'
+# Personal variant with the existing six prepared clips:
+$env:JAVA_OPTS='-Djava.net.preferIPv4Stack=true'
+.\gradlew.bat clean build --no-daemon --offline --console=plain --warning-mode=all '-PuserSoundResources=.tools/user-sounds' '-Dorg.gradle.jvmargs=-Xmx2G -Dfile.encoding=UTF-8 -Djava.io.tmpdir=E:/Projects/nexvisuals/.tools/tmp -Djava.net.preferIPv4Stack=true'
+.\tools\validate_shaders.ps1
+git diff --check
+```
+
+- **Обе clean-сборки: BUILD SUCCESSFUL, 15 tasks executed.** Public: 1m 14s; personal: 1m 13s. Выполнены main/client compilation, test/clientTest, remapJar/remapSourcesJar, check и verifyModJar. Итоговые build outputs без warnings/errors. Ignored логи: `.tools/validation-1.0-public-ipv4-build.log`, `.tools/validation-1.0-local-retry-build.log`.
+- **В каждом варианте 192 tests: 128 core + 64 headless client; failures/errors/skipped = 0.** Результаты реально подсчитаны из Gradle XML, отдельно сохранены перед переключением режима. Прежние registry/duplicate IDs/settings/clamping/config/corruption/profiles/HUD/animation/render math/search/Mixin suites прошли.
+- Новые checks: sampled observed segments, budget exhaustion без catch-up, hidden/teleport reset, invalid coordinates; pickup merging/components/expiration/count overflow/row cap/clock rollback/fade; разные recipes, config restart/profile/reset/old defaults; native pickup handoff-before-shrink / uncancellable observer. GUI audio status соответствует фактическому resource mode.
+- До full builds отдельно прошли MotionTrailTest / PickupFeedTest / ReleaseFeaturesTest / MixinContractTest. Первые запуски Gradle периодически **падали до compilation** на `FileLockContentionHandler → SocketException: No buffer space available ... bind`. Java IPv4 UDP bind probe успешен. Повторные успешные команды использовали процессные IPv4 flags; системные network settings/другие приложения не изменялись. Это наблюдаемый сбой окружения, не скрытый failed test; logs сохранены в `.tools/validation-1.0-targeted.log`, `validation-1.0-public-build.log`, `validation-1.0-local-build.log`.
+- **GLSL compile/link + uniform layout PASS** для всех пяти GLSL 330 vertex/fragment pairs с imports из actual MC 1.21.11: SkyConfig 176, StarConfig 48, VisualConfig 272, BackgroundConfig 96, HighlightConfig 16 bytes. Лог `.tools/validation-1.0-shaders.log`. Это offline GLSL проверка, не GPU render.
+- Production ZIP integrity / client entrypoint / exact Minecraft / Mixins / MIT notice / shader/preset resources / test-class exclusion — PASS. **Personal: 6 OGG + origin manifest побайтно совпадают с prepared resources и manifest hashes. Public: 0 audio files / no origin manifest; 6 installed Minecraft event fallbacks.** Общие class/shader/preset/notice files двух вариантов побайтно одинаковы. При сравнении исключены ZIP directory entries, не содержащие данных.
+- `git diff --check`, trailing whitespace/final newline для новых untracked text files и локальные links release docs — PASS.
+
+## Готовые production JAR
+
+| Вариант | Реальный файл | Размер | SHA-256 |
+| --- | --- | --- | --- |
+| Личный, с шестью клипами | `E:\Projects\nexvisuals\build\libs\nexvisuals-1.0.0.jar` | 587080 bytes | `d89dabc5faec63da1d3b68d3d31c6097c13602fc82e7623bdd5c6ae1d339796a` |
+| Публичный, vanilla sounds | `E:\Projects\nexvisuals\build\release\nexvisuals-1.0.0.jar` | 543856 bytes | `16778f69e63962b46b3b83c4206131823beda3d7454270557ab123de9335f173` |
+
+Public JAR сохранён из первой remapJar build до personal clean и скопирован в `build/release/` после второй сборки. Стандартный output Gradle остаётся `build/libs/`. Ignored artifact audits: `.tools/validation-1.0-public-artifact.json`, `.tools/validation-1.0-local-artifact.json`. Source JAR не предназначен для установки; personal sources также включают optional resources и не являются public artifact.
+
+Устанавливать **ровно один** production JAR, предварительно убрав прежнюю версию. Требования: **Minecraft 1.21.11**, Java 21+, Fabric Loader >=0.19.5, Fabric API >=0.141.6+1.21.11; дополнительные обязательные зависимости не добавлены. Sodium/Iris опциональны.
+
+## Пользователю проверить в игре
+
+Checklist новых presets, projectiles/LOS/Own only/budgets, local pickup filtering/merging/expiration, HUD Editor/resize, audio preview/vanilla mix, config/profiles/restart и прежних функций — [release-features](release-features.md). Приоритет: отличия Comet/Embers/Pearl Halos; Slide/Pop/Fade и icons/label readability; отсутствие чужих pickup notices; OFF/world change/Minimal particles. Также проверить Sodium/Iris и FPS на своей системе.
+
+Minecraft/runClient/computer-use **не запускались**. Новые эффекты не названы визуально проверенными: реальные GPU output, Mixin transformer в игре и runtime совместимость остаются manual QA. Новые Mixin classes не добавлены. Архитектура/ограничения — [release-features](release-features.md), готовое описание — [RELEASE_NOTES](../RELEASE_NOTES.md). Commit/push/tag/GitHub release/publication не выполнялись.
+
+---
+
 # Предрелиз 0.9.1-dev — 2 октября 2026
 
 Исправлен reported GUI bug: при непустом поиске описания мерцали, а список постоянно возвращался вверх. В фактическом Minecraft **1.21.11** `EditBox.moveCursorTo` вызывает `onValueChange` даже без изменения строки. Восстановление курсора после rebuild повторно запускало search responder, обнуляло moduleScroll и назначало следующий rebuild. `GuiState.updateQuery` теперь различает изменение текста и cursor-only notification; экран перестраивает список только в первом случае. Старое восстановление keyboard focus/курсорной позиции сохранено. Rendering, presets, config schema, Viewmodel и звуки не переписаны.
